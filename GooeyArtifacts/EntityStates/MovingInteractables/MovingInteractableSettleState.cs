@@ -19,7 +19,7 @@ namespace GooeyArtifacts.EntityStates.MovingInteractables
         {
             base.OnEnter();
 
-            if (spawnCard.slightlyRandomizeOrientation)
+            if (spawnCard && spawnCard.slightlyRandomizeOrientation)
             {
                 TargetPosition += transform.TransformDirection(Vector3.down * 0.3f);
             }

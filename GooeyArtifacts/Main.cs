@@ -14,10 +14,14 @@ namespace GooeyArtifacts
 
         ContentPackProvider _contentPackProvider;
 
+        internal static Main Instance { get; private set; }
+
         public static string PluginDirectory { get; private set; }
 
         void Awake()
         {
+            Instance = this;
+
             Stopwatch stopwatch = Stopwatch.StartNew();
 
             Log.Init(Logger);

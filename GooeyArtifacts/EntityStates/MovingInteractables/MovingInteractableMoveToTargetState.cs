@@ -37,40 +37,39 @@ namespace GooeyArtifacts.EntityStates.MovingInteractables
             if (spawnCard)
             {
                 _moveSpeed = Mathf.Max(5f, Util.Remap(spawnCard.directorCreditCost, 0f, 50f, 10f, 7.5f));
-
-                if (Util.GuessRenderBoundsMeshOnly(spawnCard.prefab, out Bounds prefabBounds))
-                {
-                    Vector3 size = prefabBounds.size;
-
-                    float maxWidth = Mathf.Max(size.x, size.z);
-                    float height = size.y;
-
-                    float sizeCoefficient;
-                    if (maxWidth > height)
-                    {
-                        sizeCoefficient = height / maxWidth;
-                    }
-                    else
-                    {
-                        sizeCoefficient = Mathf.Sqrt(maxWidth / height);
-                    }
-
-                    _moveSpeed *= sizeCoefficient;
-                    _maxStepRotation *= sizeCoefficient;
-                }
             }
             else
             {
-                Log.Warning($"Unable to calculate interactable move speed for {gameObject}, using fallback");
                 _moveSpeed = 10f;
+            }
+
+            if (Util.GuessRenderBoundsMeshOnly(gameObject, out Bounds prefabBounds))
+            {
+                Vector3 size = prefabBounds.size;
+
+                float maxWidth = Mathf.Max(size.x, size.z);
+                float height = size.y;
+
+                float sizeCoefficient;
+                if (maxWidth > height)
+                {
+                    sizeCoefficient = height / maxWidth;
+                }
+                else
+                {
+                    sizeCoefficient = Mathf.Sqrt(maxWidth / height);
+                }
+
+                _moveSpeed *= sizeCoefficient;
+                _maxStepRotation *= sizeCoefficient;
             }
 
             if (SceneInfo.instance)
             {
-                NodeGraph nodeGraph = SceneInfo.instance.GetNodeGraph(spawnCard.nodeGraphType);
+                NodeGraph nodeGraph = SceneInfo.instance.GetNodeGraph(nodeGraphType);
                 if (nodeGraph)
                 {
-                    HullDef hullDef = HullDef.Find(spawnCard.hullSize);
+                    HullDef hullDef = HullDef.Find(hullSize);
 
                     _path = new Path(nodeGraph);
 
@@ -78,7 +77,7 @@ namespace GooeyArtifacts.EntityStates.MovingInteractables
                     {
                         startPos = transform.position,
                         endPos = Destination,
-                        hullClassification = spawnCard.hullSize,
+                        hullClassification = hullSize,
                         maxJumpHeight = hullDef.height,
                         maxSpeed = hullDef.radius * 3f,
                         path = _path
@@ -89,17 +88,18 @@ namespace GooeyArtifacts.EntityStates.MovingInteractables
                     {
                         _pathTraveller = new PathTraveller(_path);
 
-                        if (spawnCard.occupyPosition)
+                        // TODO: Account for RoR2.OccupyNearbyNodes component
+                        if (occupyPosition)
                         {
-                            float nodeSearchDistance = HullDef.Find(spawnCard.hullSize).radius * 5f;
+                            float nodeSearchDistance = HullDef.Find(hullSize).radius * 5f;
 
-                            NodeGraph.NodeIndex currentOccupiedNode = nodeGraph.FindClosestNode(transform.position, spawnCard.hullSize, nodeSearchDistance);
+                            NodeGraph.NodeIndex currentOccupiedNode = nodeGraph.FindClosestNode(transform.position, hullSize, nodeSearchDistance);
                             if (currentOccupiedNode != NodeGraph.NodeIndex.invalid)
                             {
                                 NodeUtils.SetNodeOccupied(nodeGraph, currentOccupiedNode, false);
                             }
 
-                            NodeGraph.NodeIndex destinationNode = nodeGraph.FindClosestNode(Destination, spawnCard.hullSize, nodeSearchDistance);
+                            NodeGraph.NodeIndex destinationNode = nodeGraph.FindClosestNode(Destination, hullSize, nodeSearchDistance);
                             if (destinationNode != NodeGraph.NodeIndex.invalid)
                             {
                                 NodeUtils.SetNodeOccupied(nodeGraph, destinationNode, true);
@@ -154,7 +154,7 @@ namespace GooeyArtifacts.EntityStates.MovingInteractables
             if (_targetAtEnd && _currentPosition == _targetPosition)
             {
                 Vector3 targetEuler = _startRotation.eulerAngles;
-                targetEuler.y = _currentRotation.eulerAngles.y + RoR2Application.rng.RangeFloat(-15f, 15f);
+                targetEuler.y = _currentRotation.eulerAngles.y + UnityEngine.Random.Range(-15f, 15f);
 
                 outer.SetNextState(new MovingInteractableSettleState
                 {
