@@ -72,8 +72,8 @@ namespace GooeyArtifacts.EntityStates.MovingInteractables
             {
                 position = transform.position,
                 placementMode = DirectorPlacementRule.PlacementMode.Approximate,
-                minDistance = 15f,
-                maxDistance = 15f + (Mathf.Pow(RoR2Application.rng.nextNormalizedFloat, 2f) * 150f)
+                minDistance = 20f,
+                maxDistance = 50f + (Mathf.Pow(RoR2Application.rng.nextNormalizedFloat, 2.25f) * 150f)
             };
 
             DirectorSpawnRequest spawnRequest = new DirectorSpawnRequest(_nextPositionSelectorSpawnCard, placementRule, RoR2Application.rng);
