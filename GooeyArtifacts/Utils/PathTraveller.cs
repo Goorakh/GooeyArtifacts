@@ -16,89 +16,64 @@ namespace GooeyArtifacts.Utils
             Path = path;
         }
 
-        public Vector3 AdvancePosition(float moveDelta, out TravelData travelData, out bool isAtEnd)
+        // TODO: Learn math (follow jump arcs for jump nodes instead of just interpolating like normal)
+        public TravelData AdvancePosition(float moveDelta)
         {
-            TravelData getEndTravelData(out Vector3 endNodePosition)
-            {
-                Path.nodeGraph.GetNodePosition(Path[Path.waypointsCount - 1].nodeIndex, out endNodePosition);
-                Path.nodeGraph.GetNodePosition(Path[Path.waypointsCount - 2].nodeIndex, out Vector3 prevNodePosition);
-
-                return new TravelData((endNodePosition - prevNodePosition).normalized, Vector3.up, 0f);
-            }
-
-            if (_lastWaypointIndex >= Path.waypointsCount - 1)
-            {
-                travelData = getEndTravelData(out Vector3 nodePosition);
-
-                isAtEnd = true;
-                return nodePosition;
-            }
-
             _currentWaypointDistanceTravelled += moveDelta;
 
-            WaypointTraversalData getCurrentWaypointData()
+            for (; _lastWaypointIndex < Path.waypointsCount - 1; _lastWaypointIndex++)
             {
-                Path.Waypoint prevWaypoint = Path[_lastWaypointIndex];
-                Path.Waypoint nextWaypoint = Path[_lastWaypointIndex + 1];
+                WaypointTraversalData waypointData = new WaypointTraversalData(Path, _lastWaypointIndex);
 
-                return new WaypointTraversalData(Path, prevWaypoint, nextWaypoint);
-            }
-
-            WaypointTraversalData waypointData = getCurrentWaypointData();
-
-            while (_currentWaypointDistanceTravelled >= waypointData.Distance)
-            {
-                _currentWaypointDistanceTravelled -= waypointData.Distance;
-                _lastWaypointIndex++;
-
-                if (_lastWaypointIndex >= Path.waypointsCount - 1)
+                if (_currentWaypointDistanceTravelled >= waypointData.TotalDistance)
                 {
-                    travelData = getEndTravelData(out Vector3 nodePosition);
-
-                    isAtEnd = true;
-                    return nodePosition;
+                    _currentWaypointDistanceTravelled -= waypointData.TotalDistance;
+                    continue;
                 }
 
-                waypointData = getCurrentWaypointData();
+                float totalDistanceRemaining = waypointData.TotalDistance - _currentWaypointDistanceTravelled;
+                for (int i = _lastWaypointIndex + 2; i < Path.waypointsCount; i++)
+                {
+                    WaypointTraversalData traversalData = new WaypointTraversalData(Path, i - 1);
+                    totalDistanceRemaining += traversalData.TotalDistance;
+                }
+
+                float travelFraction = Mathf.Clamp01(_currentWaypointDistanceTravelled / waypointData.TotalDistance);
+
+                return new TravelData(Path, waypointData.Start, waypointData.End, travelFraction, totalDistanceRemaining, false);
             }
 
-            float travelFraction = Mathf.Clamp01(_currentWaypointDistanceTravelled / waypointData.Distance);
-
-            Vector3 startNormal = WorldUtils.GetEnvironmentNormalAtPoint(waypointData.StartPosition);
-            Vector3 endNormal = WorldUtils.GetEnvironmentNormalAtPoint(waypointData.EndPosition);
-
-            Vector3 normal = Quaternion.Slerp(Quaternion.LookRotation(startNormal), Quaternion.LookRotation(endNormal), travelFraction) * Vector3.forward;
-
-            float totalDistanceRemaining = waypointData.Distance - _currentWaypointDistanceTravelled;
-            for (int i = _lastWaypointIndex + 2; i < Path.waypointsCount; i++)
-            {
-                NodeGraph.NodeIndex prevWaypointNode = Path[i - 1].nodeIndex;
-                NodeGraph.NodeIndex nextWaypointNode = Path[i].nodeIndex;
-
-                Path.nodeGraph.GetNodePosition(prevWaypointNode, out Vector3 prevWaypointPosition);
-                Path.nodeGraph.GetNodePosition(nextWaypointNode, out Vector3 nextWaypointPosition);
-
-                totalDistanceRemaining += Vector3.Distance(prevWaypointPosition, nextWaypointPosition);
-            }
-
-            travelData = new TravelData(waypointData.TravelDirection, normal, totalDistanceRemaining);
-            isAtEnd = false;
-            return Vector3.Lerp(waypointData.StartPosition, waypointData.EndPosition, travelFraction);
+            return new TravelData(Path, Path[Path.waypointsCount - 2], Path[Path.waypointsCount - 1], 1f, 0f, true);
         }
 
         public readonly struct TravelData
         {
+            public readonly Vector3 CurrentPosition;
+
             public readonly Vector3 Direction;
             public readonly Vector3 InterpolatedNormal;
 
             public readonly float RemainingTotalDistance;
 
-            public TravelData(Vector3 direction, Vector3 interpolatedNormal, float remainingTotalDistance)
+            public readonly bool IsAtEnd;
+
+            public TravelData(Path path, Path.Waypoint start, Path.Waypoint end, float travelFraction, float remainingTotalDistance, bool isAtEnd)
             {
-                Direction = direction;
-                InterpolatedNormal = interpolatedNormal;
+                path.nodeGraph.GetNodePosition(start.nodeIndex, out Vector3 startPosition);
+                path.nodeGraph.GetNodePosition(end.nodeIndex, out Vector3 endPosition);
+
+                CurrentPosition = Vector3.Lerp(startPosition, endPosition, travelFraction);
+
+                Direction = (endPosition - startPosition).normalized;
+
+                Vector3 startNormal = WorldUtils.GetEnvironmentNormalAtPoint(startPosition);
+                Vector3 endNormal = WorldUtils.GetEnvironmentNormalAtPoint(endPosition);
+
+                InterpolatedNormal = Quaternion.Slerp(Util.QuaternionSafeLookRotation(startNormal), Util.QuaternionSafeLookRotation(endNormal), travelFraction) * Vector3.forward;
 
                 RemainingTotalDistance = remainingTotalDistance;
+
+                IsAtEnd = isAtEnd;
             }
         }
 
@@ -110,21 +85,17 @@ namespace GooeyArtifacts.Utils
             public readonly Vector3 StartPosition;
             public readonly Vector3 EndPosition;
 
-            public readonly Vector3 TravelDirection;
+            public readonly float TotalDistance;
 
-            public readonly float Distance;
-
-            public WaypointTraversalData(Path path, Path.Waypoint start, Path.Waypoint end)
+            public WaypointTraversalData(Path path, int startIndex)
             {
-                Start = start;
-                path.nodeGraph.GetNodePosition(start.nodeIndex, out StartPosition);
+                Start = path[startIndex];
+                path.nodeGraph.GetNodePosition(Start.nodeIndex, out StartPosition);
 
-                End = end;
-                path.nodeGraph.GetNodePosition(end.nodeIndex, out EndPosition);
+                End = path[startIndex + 1];
+                path.nodeGraph.GetNodePosition(End.nodeIndex, out EndPosition);
 
-                Vector3 positionDiff = EndPosition - StartPosition;
-                Distance = positionDiff.magnitude;
-                TravelDirection = positionDiff / Distance;
+                TotalDistance = (EndPosition - StartPosition).magnitude;
             }
         }
     }

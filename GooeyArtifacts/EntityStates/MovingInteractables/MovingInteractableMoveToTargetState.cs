@@ -128,7 +128,10 @@ namespace GooeyArtifacts.EntityStates.MovingInteractables
             float moveDelta = _moveSpeed * Time.fixedDeltaTime;
             if (!_targetAtEnd)
             {
-                _targetPosition = _pathTraveller.AdvancePosition(moveDelta, out PathTraveller.TravelData travelData, out _targetAtEnd);
+                PathTraveller.TravelData travelData = _pathTraveller.AdvancePosition(moveDelta);
+
+                _targetPosition = travelData.CurrentPosition;
+                _targetAtEnd = travelData.IsAtEnd;
                 _targetRotation = Util.QuaternionSafeLookRotation(travelData.Direction, travelData.InterpolatedNormal);
 
                 estimatedTimeRemaining = travelData.RemainingTotalDistance / _moveSpeed;
