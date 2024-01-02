@@ -148,7 +148,7 @@ namespace GooeyArtifacts.Artifacts.PillarsEveryStage
 
             foreach (HoldoutZoneController holdoutZoneController in holdoutZones)
             {
-                holdoutZoneController.onCharged.AddListener(onPillarChagedServer);
+                holdoutZoneController.onCharged.AddListener(onPillarChargedServer);
             }
         }
 
@@ -165,10 +165,10 @@ namespace GooeyArtifacts.Artifacts.PillarsEveryStage
 
         void unsubscribeFromHoldoutZone(HoldoutZoneController holdoutZoneController)
         {
-            holdoutZoneController.onCharged.RemoveListener(onPillarChagedServer);
+            holdoutZoneController.onCharged.RemoveListener(onPillarChargedServer);
         }
 
-        void onPillarChagedServer(HoldoutZoneController holdoutZoneController)
+        void onPillarChargedServer(HoldoutZoneController holdoutZoneController)
         {
             ChargedPillarCount++;
 
