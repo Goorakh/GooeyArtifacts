@@ -1,0 +1,16 @@
+{
+	strings:
+	{
+		"ARTIFACT_MONSTER_COPY_PLAYER_ITEMS_NAME": "Artifact of Reflection",
+		"ARTIFACT_MONSTER_COPY_PLAYER_ITEMS_DESCRIPTION": "Every item in a player's inventory is also given to all enemies.",
+		
+		"ARTIFACT_PLAYER_ITEM_CURSE_NAME": "Artifact of Greed",
+		"ARTIFACT_PLAYER_ITEM_CURSE_DESCRIPTION": "Every item carried adds a stacking curse.",
+		
+		"ARTIFACT_PILLARS_EVERY_STAGE_NAME": "Artifact of Game Design",
+		"ARTIFACT_PILLARS_EVERY_STAGE_DESCRIPTION": "Pillars spawn on every stage, which must be charged before activating the teleporter.",
+
+		"ARTIFACT_MOVING_INTERACTABLES_NAME": "Artifact of Redecorating",
+		"ARTIFACT_MOVING_INTERACTABLES_DESCRIPTION": "Interactables randomly wander around the stage."
+	}
+}
