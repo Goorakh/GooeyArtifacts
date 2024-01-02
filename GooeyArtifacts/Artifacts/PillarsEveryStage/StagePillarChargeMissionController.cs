@@ -35,7 +35,7 @@ namespace GooeyArtifacts.Artifacts.PillarsEveryStage
                     unsubscribeFromHoldoutZones(_pillarHoldoutZoneControllersServer);
                 }
 
-                _pillarObjectsServer ??= Array.Empty<GameObject>();
+                value ??= Array.Empty<GameObject>();
 
                 _pillarObjectsServer = value;
                 _pillarHoldoutZoneControllersServer = Array.ConvertAll(_pillarObjectsServer, g => g.GetComponent<HoldoutZoneController>());
