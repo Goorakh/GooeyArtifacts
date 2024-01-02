@@ -141,17 +141,15 @@ namespace GooeyArtifacts.EntityStates.MovingInteractables
                 estimatedTimeRemaining = 0f;
             }
 
-            _currentPosition = Vector3.MoveTowards(_currentPosition, _targetPosition, moveDelta);
-
-            float stepMagnitude = 1f;
-            stepMagnitude *= Mathf.Min(1f, Util.Remap(fixedAge, 0f, 2f, 0f, 1f));
-            stepMagnitude *= Mathf.Clamp01(Util.Remap(estimatedTimeRemaining, 0f, 2.5f, 0f, 1f));
-            stepMagnitude = Mathf.Sqrt(stepMagnitude);
+            float stepMagnitude = Mathf.Sqrt(Mathf.Min(1f, Util.Remap(fixedAge, 0f, 1f, 0f, 1f))
+                                             * Mathf.Clamp01(Util.Remap(estimatedTimeRemaining, 0f, 2.5f, 0f, 1f)));
 
             float stepValue = 4f * Mathf.PI * fixedAge;
-            transform.position = _currentPosition + new Vector3(0f, Mathf.Abs(Mathf.Sin(stepValue)) * _stepHeight * stepMagnitude, 0f);
 
+            _currentPosition = Vector3.MoveTowards(_currentPosition, _targetPosition, moveDelta);
             _currentRotation = Quaternion.RotateTowards(_currentRotation, _targetRotation, 135f * Time.fixedDeltaTime);
+
+            transform.position = _currentPosition + (_currentRotation * new Vector3(0f, Mathf.Abs(Mathf.Sin(stepValue)) * _stepHeight * stepMagnitude, 0f));
             transform.rotation = Quaternion.AngleAxis(Mathf.Sin(stepValue + (Mathf.PI / 2f)) * _maxStepRotation * stepMagnitude, _currentRotation * Vector3.forward) * _currentRotation;
 
             if (_targetAtEnd && _currentPosition == _targetPosition)
