@@ -1,26 +1,18 @@
 ﻿using GooeyArtifacts.Utils;
 using RoR2;
 using RoR2.Navigation;
-using System;
 using UnityEngine;
-using UnityEngine.AddressableAssets;
 
 namespace GooeyArtifacts.EntityStates.MovingInteractables
 {
     [EntityStateType]
     public class MovingInteractableMoveToTargetState : MovingInteractableBaseState
     {
-        static readonly InteractableSpawnCard[] _teleporterSpawnCards = new InteractableSpawnCard[]
-        {
-            Addressables.LoadAssetAsync<InteractableSpawnCard>("RoR2/Base/Teleporters/iscTeleporter.asset").WaitForCompletion(),
-            Addressables.LoadAssetAsync<InteractableSpawnCard>("RoR2/Base/Teleporters/iscLunarTeleporter.asset").WaitForCompletion(),
-        };
-
         public Vector3 Destination;
 
         Quaternion _startRotation;
 
-        float _moveSpeed;
+        float _moveSpeed = 10f;
 
         float _stepHeight = 2f;
         float _maxStepRotation = 35f;
@@ -42,15 +34,30 @@ namespace GooeyArtifacts.EntityStates.MovingInteractables
 
             _startRotation = transform.rotation;
 
-            if (Array.IndexOf(_teleporterSpawnCards, spawnCard) != -1)
-            {
-                _moveSpeed = 12.5f;
-
-                _maxStepRotation = 10f;
-            }
-            else if (spawnCard)
+            if (spawnCard)
             {
                 _moveSpeed = Mathf.Max(5f, Util.Remap(spawnCard.directorCreditCost, 0f, 50f, 10f, 7.5f));
+
+                if (Util.GuessRenderBoundsMeshOnly(spawnCard.prefab, out Bounds prefabBounds))
+                {
+                    Vector3 size = prefabBounds.size;
+
+                    float maxWidth = Mathf.Max(size.x, size.z);
+                    float height = size.y;
+
+                    float sizeCoefficient;
+                    if (maxWidth > height)
+                    {
+                        sizeCoefficient = height / maxWidth;
+                    }
+                    else
+                    {
+                        sizeCoefficient = Mathf.Sqrt(maxWidth / height);
+                    }
+
+                    _moveSpeed *= sizeCoefficient;
+                    _maxStepRotation *= sizeCoefficient;
+                }
             }
             else
             {
@@ -141,18 +148,18 @@ namespace GooeyArtifacts.EntityStates.MovingInteractables
             float stepValue = 4f * Mathf.PI * fixedAge;
             transform.position = _currentPosition + new Vector3(0f, Mathf.Abs(Mathf.Sin(stepValue)) * _stepHeight * stepMagnitude, 0f);
 
-            _currentRotation = Quaternion.RotateTowards(_currentRotation, _targetRotation, 180f * Time.fixedDeltaTime);
+            _currentRotation = Quaternion.RotateTowards(_currentRotation, _targetRotation, 135f * Time.fixedDeltaTime);
             transform.rotation = Quaternion.AngleAxis(Mathf.Sin(stepValue + (Mathf.PI / 2f)) * _maxStepRotation * stepMagnitude, _currentRotation * Vector3.forward) * _currentRotation;
 
             if (_targetAtEnd && _currentPosition == _targetPosition)
             {
                 Vector3 targetEuler = _startRotation.eulerAngles;
-                targetEuler.y = _currentRotation.eulerAngles.y;
+                targetEuler.y = _currentRotation.eulerAngles.y + RoR2Application.rng.RangeFloat(-15f, 15f);
 
                 outer.SetNextState(new MovingInteractableSettleState
                 {
                     TargetRotation = Quaternion.Euler(targetEuler),
-                    TargetPosition = _currentPosition
+                    TargetPosition = _targetPosition
                 });
             }
         }
