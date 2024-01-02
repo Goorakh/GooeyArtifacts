@@ -26,6 +26,8 @@ namespace GooeyArtifacts.EntityStates.MovingInteractables
         SpawnCard _nextPositionSelectorSpawnCard;
         bool _positionSelectorIsTemporary;
 
+        float _startingMaxSearchDistance = 50f;
+
         public override void OnEnter()
         {
             base.OnEnter();
@@ -93,6 +95,15 @@ namespace GooeyArtifacts.EntityStates.MovingInteractables
 
                                 return;
                             }
+                            else
+                            {
+                                outer.SetNextState(new MovingInteractableRestState
+                                {
+                                    _startingMaxSearchDistance = _startingMaxSearchDistance + 25f
+                                });
+
+                                return;
+                            }
                         }
                     }
                 }
@@ -116,7 +127,7 @@ namespace GooeyArtifacts.EntityStates.MovingInteractables
                 position = transform.position,
                 placementMode = DirectorPlacementRule.PlacementMode.Approximate,
                 minDistance = 20f,
-                maxDistance = 50f + (Mathf.Pow(UnityEngine.Random.value, 2.25f) * 150f)
+                maxDistance = _startingMaxSearchDistance + (Mathf.Pow(UnityEngine.Random.value, 2.25f) * 150f)
             };
 
             DirectorSpawnRequest spawnRequest = new DirectorSpawnRequest(_nextPositionSelectorSpawnCard, placementRule, RoR2Application.rng);
