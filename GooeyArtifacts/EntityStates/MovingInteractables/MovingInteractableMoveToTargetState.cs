@@ -69,8 +69,6 @@ namespace GooeyArtifacts.EntityStates.MovingInteractables
                 NodeGraph nodeGraph = SceneInfo.instance.GetNodeGraph(nodeGraphType);
                 if (nodeGraph)
                 {
-                    HullDef hullDef = HullDef.Find(hullSize);
-
                     _path = new Path(nodeGraph);
 
                     NodeGraph.PathRequest pathRequest = new NodeGraph.PathRequest
@@ -78,8 +76,8 @@ namespace GooeyArtifacts.EntityStates.MovingInteractables
                         startPos = transform.position,
                         endPos = Destination,
                         hullClassification = hullSize,
-                        maxJumpHeight = hullDef.height,
-                        maxSpeed = hullDef.radius * 3f,
+                        maxJumpHeight = float.PositiveInfinity,
+                        maxSpeed = float.PositiveInfinity,
                         path = _path
                     };
 
