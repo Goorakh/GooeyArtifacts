@@ -64,7 +64,7 @@ namespace GooeyArtifacts
 
                 NetworkTransform networkTransform = SyncExternalNetObjectTransformPrefab.AddComponent<NetworkTransform>();
                 networkTransform.transformSyncMode = NetworkTransform.TransformSyncMode.SyncTransform;
-                networkTransform.sendInterval = 1f / 30f;
+                networkTransform.sendInterval = 1f / 15f;
 
                 SyncExternalNetObjectTransformPrefab.AddComponent<SyncExternalNetworkedObjectTransform>();
             }

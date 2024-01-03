@@ -31,28 +31,13 @@ namespace GooeyArtifacts.Utils
         new Transform transform;
         NetworkTransform _netTransform;
 
+        Vector3 _targetPositionSmoothVelocity;
+        Quaternion _targetRotationSmoothVelocity;
+
         void Awake()
         {
             transform = base.transform;
             _netTransform = GetComponent<NetworkTransform>();
-        }
-
-        void OnEnable()
-        {
-            if (_netTransform)
-            {
-                _netTransform.clientMoveCallback3D = clientMoveCallback;
-            }
-
-            updateTargetObjectTransform();
-        }
-
-        void OnDisable()
-        {
-            if (_netTransform)
-            {
-                _netTransform.clientMoveCallback3D = null;
-            }
         }
 
         public override void PreStartClient()
@@ -60,7 +45,7 @@ namespace GooeyArtifacts.Utils
             if (!_targetObjectNetId.IsEmpty())
             {
                 _targetObject = ClientScene.FindLocalObject(_targetObjectNetId);
-                updateTargetObjectTransform();
+                updateClientObjectTransform();
             }
         }
 
@@ -75,26 +60,40 @@ namespace GooeyArtifacts.Utils
             }
             else
             {
-                updateTargetObjectTransform();
+                updateClientObjectTransform(true, Time.deltaTime);
             }
         }
 
-        bool clientMoveCallback(ref Vector3 position, ref Vector3 velocity, ref Quaternion rotation)
+        void updateClientObjectTransform()
         {
-            updateTargetObjectTransform(position, rotation);
-            return true;
+            updateClientObjectTransform(false, 0f);
         }
 
-        void updateTargetObjectTransform()
+        void updateClientObjectTransform(bool smooth, float deltaTime)
         {
-            updateTargetObjectTransform(transform.position, transform.rotation);
+            updateClientObjectTransform(transform.position, transform.rotation, smooth, deltaTime);
         }
 
-        void updateTargetObjectTransform(Vector3 position, Quaternion rotation)
+        void updateClientObjectTransform(Vector3 targetPosition, Quaternion targetRotation, bool smooth, float deltaTime)
         {
-            if (_targetObject)
+            if (!_targetObject)
+                return;
+
+            Transform targetTransform = _targetObject.transform;
+
+            if (smooth)
             {
-                _targetObject.transform.SetPositionAndRotation(position, rotation);
+                float smoothTime = _netTransform.sendInterval;
+
+                targetTransform.position = Vector3.SmoothDamp(targetTransform.position, targetPosition, ref _targetPositionSmoothVelocity, smoothTime, float.PositiveInfinity, deltaTime);
+
+                targetTransform.rotation = QuaternionUtil.SmoothDamp(targetTransform.rotation, targetRotation, ref _targetRotationSmoothVelocity, smoothTime, float.PositiveInfinity, deltaTime);
+            }
+            else
+            {
+                targetTransform.SetPositionAndRotation(targetPosition, targetRotation);
+                _targetPositionSmoothVelocity = Vector3.zero;
+                _targetRotationSmoothVelocity = Quaternion.identity;
             }
         }
 
