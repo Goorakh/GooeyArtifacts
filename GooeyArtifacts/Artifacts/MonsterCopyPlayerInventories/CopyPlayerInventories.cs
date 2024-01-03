@@ -1,6 +1,8 @@
 ﻿using RoR2;
+using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using UnityEngine.Networking;
 
 namespace GooeyArtifacts.Artifacts.MonsterCopyPlayerInventories
 {
@@ -47,14 +49,14 @@ namespace GooeyArtifacts.Artifacts.MonsterCopyPlayerInventories
 
         void refreshInventory()
         {
+            if (!NetworkServer.active)
+                return;
+
             int[] oldItemStacks = ItemCatalog.GetPerItemBuffer<int>();
             _inventory.WriteItemStacks(oldItemStacks);
 
-            for (int i = _inventory.itemAcquisitionOrder.Count - 1; i >= 0; i--)
-            {
-                ItemIndex itemIndex = _inventory.itemAcquisitionOrder[i];
-                _inventory.RemoveItem(itemIndex, _inventory.GetItemCount(itemIndex));
-            }
+            List<ItemIndex> itemOrder = new List<ItemIndex>(_inventory.itemAcquisitionOrder);
+            int[] newItemStacks = ItemCatalog.GetPerItemBuffer<int>();
 
             foreach (PlayerCharacterMasterController playerController in PlayerCharacterMasterController.instances)
             {
@@ -70,7 +72,12 @@ namespace GooeyArtifacts.Artifacts.MonsterCopyPlayerInventories
                 {
                     if (itemCopyFilter(itemIndex))
                     {
-                        _inventory.GiveItem(itemIndex, inventory.GetItemCount(itemIndex));
+                        if (!itemOrder.Contains(itemIndex))
+                        {
+                            itemOrder.Add(itemIndex);
+                        }
+
+                        newItemStacks[(int)itemIndex] += inventory.GetItemCount(itemIndex);
                     }
                 }
             }
@@ -81,29 +88,31 @@ namespace GooeyArtifacts.Artifacts.MonsterCopyPlayerInventories
                                                                                         .Distinct()
                                                                                         .ToArray();
 
-            if (allNonPlayersInventories.Length > 0)
+            foreach (ItemIndex item in itemOrder)
             {
-                foreach (ItemIndex i in ItemCatalog.allItems)
-                {
-                    int stackDiff = _inventory.GetItemCount(i) - oldItemStacks[(int)i];
-                    if (stackDiff != 0)
-                    {
+                int currentItemCount = oldItemStacks[(int)item];
+                int newItemCount = newItemStacks[(int)item];
+
+                int itemCountDiff = newItemCount - currentItemCount;
+                if (itemCountDiff == 0)
+                    continue;
+
 #if DEBUG
-                        if (stackDiff > 0)
-                        {
-                            Log.Debug($"Adding {Language.GetString(ItemCatalog.GetItemDef(i).nameToken)} (x{stackDiff}) to monster inventories");
-                        }
-                        else
-                        {
-                            Log.Debug($"Removing {Language.GetString(ItemCatalog.GetItemDef(i).nameToken)} (x{-stackDiff}) from monster inventories");
-                        }
+                if (itemCountDiff > 0)
+                {
+                    Log.Debug($"Adding {Language.GetString(ItemCatalog.GetItemDef(item).nameToken)} (x{itemCountDiff}) to inventories");
+                }
+                else
+                {
+                    Log.Debug($"Removing {Language.GetString(ItemCatalog.GetItemDef(item).nameToken)} (x{-itemCountDiff}) from inventories");
+                }
 #endif
 
-                        foreach (Inventory inventory in allNonPlayersInventories)
-                        {
-                            inventory.GiveItem(i, stackDiff);
-                        }
-                    }
+                _inventory.GiveItem(item, itemCountDiff);
+
+                foreach (Inventory inventory in allNonPlayersInventories)
+                {
+                    inventory.GiveItem(item, itemCountDiff);
                 }
             }
         }
@@ -118,6 +127,9 @@ namespace GooeyArtifacts.Artifacts.MonsterCopyPlayerInventories
 
         void CharacterMaster_onStartGlobal(CharacterMaster master)
         {
+            if (!NetworkServer.active)
+                return;
+
             if (master.teamIndex != TeamIndex.Player)
             {
                 Inventory inventory = master.inventory;
