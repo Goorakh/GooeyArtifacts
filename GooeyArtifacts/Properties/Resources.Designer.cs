@@ -79,5 +79,65 @@ namespace GooeyArtifacts.Properties {
                 return ((byte[])(obj));
             }
         }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Byte[].
+        /// </summary>
+        internal static byte[] MovingInteractablesIconDeselected {
+            get {
+                object obj = ResourceManager.GetObject("MovingInteractablesIconDeselected", resourceCulture);
+                return ((byte[])(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Byte[].
+        /// </summary>
+        internal static byte[] MovingInteractablesIconSelected {
+            get {
+                object obj = ResourceManager.GetObject("MovingInteractablesIconSelected", resourceCulture);
+                return ((byte[])(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Byte[].
+        /// </summary>
+        internal static byte[] PillarsEveryStageIconDeselected {
+            get {
+                object obj = ResourceManager.GetObject("PillarsEveryStageIconDeselected", resourceCulture);
+                return ((byte[])(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Byte[].
+        /// </summary>
+        internal static byte[] PillarsEveryStageIconSelected {
+            get {
+                object obj = ResourceManager.GetObject("PillarsEveryStageIconSelected", resourceCulture);
+                return ((byte[])(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Byte[].
+        /// </summary>
+        internal static byte[] PlayerItemCurseIconDeselected {
+            get {
+                object obj = ResourceManager.GetObject("PlayerItemCurseIconDeselected", resourceCulture);
+                return ((byte[])(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Byte[].
+        /// </summary>
+        internal static byte[] PlayerItemCurseIconSelected {
+            get {
+                object obj = ResourceManager.GetObject("PlayerItemCurseIconSelected", resourceCulture);
+                return ((byte[])(obj));
+            }
+        }
     }
 }

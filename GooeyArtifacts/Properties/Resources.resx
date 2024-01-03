@@ -124,4 +124,22 @@
   <data name="MonsterCopyPlayerItemsIconSelected" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\MonsterCopyPlayerItemsIconSelected.png;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
+  <data name="MovingInteractablesIconDeselected" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\MovingInteractablesIconDeselected.png;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="MovingInteractablesIconSelected" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\MovingInteractablesIconSelected.png;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="PillarsEveryStageIconDeselected" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\PillarsEveryStageIconDeselected.png;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="PillarsEveryStageIconSelected" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\PillarsEveryStageIconSelected.png;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="PlayerItemCurseIconDeselected" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\PlayerItemCurseIconDeselected.png;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="PlayerItemCurseIconSelected" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\PlayerItemCurseIconSelected.png;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
 </root>

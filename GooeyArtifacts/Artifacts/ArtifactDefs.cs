@@ -39,8 +39,8 @@ namespace GooeyArtifacts.Artifacts
                 PlayerItemCurse.nameToken = "ARTIFACT_PLAYER_ITEM_CURSE_NAME";
                 PlayerItemCurse.descriptionToken = "ARTIFACT_PLAYER_ITEM_CURSE_DESCRIPTION";
 
-                PlayerItemCurse.smallIconSelectedSprite = Addressables.LoadAssetAsync<Sprite>("RoR2/Base/EclipseRun/texBuffPermanentCurse.tif").WaitForCompletion();
-                PlayerItemCurse.smallIconDeselectedSprite = Addressables.LoadAssetAsync<Sprite>("RoR2/Base/EclipseRun/texBuffPermanentCurse.tif").WaitForCompletion();
+                PlayerItemCurse.smallIconSelectedSprite = IconLoader.LoadSpriteFromBytes(Properties.Resources.PlayerItemCurseIconSelected);
+                PlayerItemCurse.smallIconDeselectedSprite = IconLoader.LoadSpriteFromBytes(Properties.Resources.PlayerItemCurseIconDeselected);
             }
 
             // PillarsEveryStage
@@ -51,8 +51,8 @@ namespace GooeyArtifacts.Artifacts
                 PillarsEveryStage.nameToken = "ARTIFACT_PILLARS_EVERY_STAGE_NAME";
                 PillarsEveryStage.descriptionToken = "ARTIFACT_PILLARS_EVERY_STAGE_DESCRIPTION";
 
-                PillarsEveryStage.smallIconSelectedSprite = Addressables.LoadAssetAsync<Sprite>("RoR2/Base/Common/MiscIcons/texLunarPillarIcon.png").WaitForCompletion();
-                PillarsEveryStage.smallIconDeselectedSprite = Addressables.LoadAssetAsync<Sprite>("RoR2/Base/Common/MiscIcons/texLunarPillarIcon.png").WaitForCompletion();
+                PillarsEveryStage.smallIconSelectedSprite = IconLoader.LoadSpriteFromBytes(Properties.Resources.PillarsEveryStageIconSelected);
+                PillarsEveryStage.smallIconDeselectedSprite = IconLoader.LoadSpriteFromBytes(Properties.Resources.PillarsEveryStageIconDeselected);
             }
 
             // MovingInteractables
@@ -63,8 +63,8 @@ namespace GooeyArtifacts.Artifacts
                 MovingInteractables.nameToken = "ARTIFACT_MOVING_INTERACTABLES_NAME";
                 MovingInteractables.descriptionToken = "ARTIFACT_MOVING_INTERACTABLES_DESCRIPTION";
 
-                MovingInteractables.smallIconSelectedSprite = Addressables.LoadAssetAsync<Sprite>("RoR2/Base/Common/MiscIcons/texInventoryIconOutlined.png").WaitForCompletion();
-                MovingInteractables.smallIconDeselectedSprite = Addressables.LoadAssetAsync<Sprite>("RoR2/Base/Common/MiscIcons/texInventoryIconOutlined.png").WaitForCompletion();
+                MovingInteractables.smallIconSelectedSprite = IconLoader.LoadSpriteFromBytes(Properties.Resources.MovingInteractablesIconSelected);
+                MovingInteractables.smallIconDeselectedSprite = IconLoader.LoadSpriteFromBytes(Properties.Resources.MovingInteractablesIconDeselected);
             }
         }
 
