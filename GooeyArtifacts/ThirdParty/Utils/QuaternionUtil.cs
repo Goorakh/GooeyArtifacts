@@ -12,7 +12,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 // This file has been modified slightly, original: https://gist.github.com/maxattack/4c7b4de00f5c1b95a33b
 
-namespace GooeyArtifacts.Utils
+namespace GooeyArtifacts.ThirdParty.Utils
 {
     public static class QuaternionUtil
     {
@@ -36,10 +36,10 @@ namespace GooeyArtifacts.Utils
 
             Quaternion derivative = AngularVelocityToDerivative(rotation, angularVelocity);
 
-            Vector4 pred = new Vector4(rotation.x + (derivative.x * deltaTime),
-                                       rotation.y + (derivative.y * deltaTime),
-                                       rotation.z + (derivative.z * deltaTime),
-                                       rotation.w + (derivative.w * deltaTime)).normalized;
+            Vector4 pred = new Vector4(rotation.x + derivative.x * deltaTime,
+                                       rotation.y + derivative.y * deltaTime,
+                                       rotation.z + derivative.z * deltaTime,
+                                       rotation.w + derivative.w * deltaTime).normalized;
 
             return new Quaternion(pred.x, pred.y, pred.z, pred.w);
         }
