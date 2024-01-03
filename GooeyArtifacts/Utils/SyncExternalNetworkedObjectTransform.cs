@@ -22,8 +22,8 @@ namespace GooeyArtifacts.Utils
 
                 if (value)
                 {
-                    transform.position = value.transform.position;
-                    transform.rotation = value.transform.rotation;
+                    Transform targetTransform = value.transform;
+                    transform.SetPositionAndRotation(targetTransform.position, targetTransform.rotation);
                 }
             }
         }
@@ -53,9 +53,13 @@ namespace GooeyArtifacts.Utils
         {
             if (hasAuthority)
             {
-                if (_targetObject && _targetObject.transform.hasChanged)
+                if (_targetObject)
                 {
-                    transform.SetPositionAndRotation(_targetObject.transform.position, _targetObject.transform.rotation);
+                    Transform targetTransform = _targetObject.transform;
+                    if (targetTransform.hasChanged)
+                    {
+                        transform.SetPositionAndRotation(targetTransform.position, targetTransform.rotation);
+                    }
                 }
             }
             else
