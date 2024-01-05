@@ -34,9 +34,12 @@ namespace GooeyArtifacts.EntityStates.MovingInteractables
 
         bool _targetAtEnd;
 
+        bool _hasCreatedPathVisualizers;
         readonly List<DebugOverlay.MeshDrawer> _pathDrawers = new List<DebugOverlay.MeshDrawer>();
         DebugOverlay.MeshDrawer _currentPositionVisualizer;
         DebugOverlay.MeshDrawer _currentTargetPositionVisualizer;
+
+        bool _areVisualizersActive;
 
         public override void OnEnter()
         {
@@ -74,94 +77,62 @@ namespace GooeyArtifacts.EntityStates.MovingInteractables
                 _maxStepRotation *= sizeCoefficient;
             }
 
-            if (SceneInfo.instance)
+            if (!tryInitializePath())
             {
-                NodeGraph nodeGraph = SceneInfo.instance.GetNodeGraph(nodeGraphType);
-                if (nodeGraph)
+                outer.SetNextStateToMain();
+            }
+        }
+
+        bool tryInitializePath()
+        {
+            SceneInfo sceneInfo = SceneInfo.instance;
+            if (!sceneInfo)
+                return false;
+
+            NodeGraph nodeGraph = sceneInfo.GetNodeGraph(nodeGraphType);
+            if (!nodeGraph)
+                return false;
+
+            _path = new Path(nodeGraph);
+
+            NodeGraph.PathRequest pathRequest = new NodeGraph.PathRequest
+            {
+                startPos = transform.position,
+                endPos = Destination,
+                hullClassification = hullSize,
+                maxJumpHeight = float.PositiveInfinity,
+                maxSpeed = float.PositiveInfinity,
+                path = _path
+            };
+
+            PathTask pathTask = nodeGraph.ComputePath(pathRequest);
+            if (!pathTask.wasReachable || pathTask.status != PathTask.TaskStatus.Complete)
+                return false;
+            
+            _pathTraveller = new PathTraveller(_path);
+
+            // TODO: Account for RoR2.OccupyNearbyNodes component
+            if (occupyPosition)
+            {
+                float nodeSearchDistance = HullDef.Find(hullSize).radius * 5f;
+
+                NodeGraph.NodeIndex currentOccupiedNode = nodeGraph.FindClosestNode(transform.position, hullSize, nodeSearchDistance);
+                if (currentOccupiedNode != NodeGraph.NodeIndex.invalid)
                 {
-                    _path = new Path(nodeGraph);
+                    NodeUtils.SetNodeOccupied(nodeGraph, currentOccupiedNode, false);
+                }
 
-                    NodeGraph.PathRequest pathRequest = new NodeGraph.PathRequest
-                    {
-                        startPos = transform.position,
-                        endPos = Destination,
-                        hullClassification = hullSize,
-                        maxJumpHeight = float.PositiveInfinity,
-                        maxSpeed = float.PositiveInfinity,
-                        path = _path
-                    };
-
-                    PathTask pathTask = nodeGraph.ComputePath(pathRequest);
-                    if (pathTask.wasReachable && pathTask.status == PathTask.TaskStatus.Complete)
-                    {
-                        _pathTraveller = new PathTraveller(_path);
-
-                        // TODO: Account for RoR2.OccupyNearbyNodes component
-                        if (occupyPosition)
-                        {
-                            float nodeSearchDistance = HullDef.Find(hullSize).radius * 5f;
-
-                            NodeGraph.NodeIndex currentOccupiedNode = nodeGraph.FindClosestNode(transform.position, hullSize, nodeSearchDistance);
-                            if (currentOccupiedNode != NodeGraph.NodeIndex.invalid)
-                            {
-                                NodeUtils.SetNodeOccupied(nodeGraph, currentOccupiedNode, false);
-                            }
-
-                            NodeGraph.NodeIndex destinationNode = nodeGraph.FindClosestNode(Destination, hullSize, nodeSearchDistance);
-                            if (destinationNode != NodeGraph.NodeIndex.invalid)
-                            {
-                                NodeUtils.SetNodeOccupied(nodeGraph, destinationNode, true);
-                            }
-                        }
-
-                        _currentPosition = transform.position;
-                        _currentRotation = transform.rotation;
-
-                        if (_cvDrawPathData.value)
-                        {
-                            using WireMeshBuilder meshBuilder = new WireMeshBuilder();
-
-                            static DebugOverlay.MeshDrawer createOwnerMeshDrawer(WireMeshBuilder meshBuilder)
-                            {
-                                DebugOverlay.MeshDrawer drawer = DebugOverlay.GetMeshDrawer();
-                                drawer.hasMeshOwnership = true;
-                                drawer.mesh = meshBuilder.GenerateMesh();
-                                return drawer;
-                            }
-
-                            Vector3 previousPosition = _currentPosition;
-                            for (int i = 0; i < _path.waypointsCount; i++)
-                            {
-                                if (nodeGraph.GetNodePosition(_path[i].nodeIndex, out Vector3 position))
-                                {
-                                    meshBuilder.AddLine(previousPosition, Color.yellow, position, Color.yellow);
-                                    previousPosition = position;
-                                }
-                            }
-
-                            _pathDrawers.Add(createOwnerMeshDrawer(meshBuilder));
-
-                            meshBuilder.Clear();
-                            meshBuilder.AddLine(Vector3.zero, Color.green, Vector3.up, Color.green);
-                            meshBuilder.AddLine(Vector3.zero, Color.green, Vector3.forward, Color.green);
-                            meshBuilder.AddLine(Vector3.left, Color.green, Vector3.right, Color.green);
-
-                            _pathDrawers.Add(_currentTargetPositionVisualizer = createOwnerMeshDrawer(meshBuilder));
-
-                            meshBuilder.Clear();
-                            meshBuilder.AddLine(Vector3.zero, Color.red, Vector3.up, Color.red);
-                            meshBuilder.AddLine(Vector3.zero, Color.red, Vector3.forward, Color.red);
-                            meshBuilder.AddLine(Vector3.left, Color.red, Vector3.right, Color.red);
-
-                            _pathDrawers.Add(_currentPositionVisualizer = createOwnerMeshDrawer(meshBuilder));
-                        }
-
-                        return;
-                    }
+                NodeGraph.NodeIndex destinationNode = nodeGraph.FindClosestNode(Destination, hullSize, nodeSearchDistance);
+                if (destinationNode != NodeGraph.NodeIndex.invalid)
+                {
+                    NodeUtils.SetNodeOccupied(nodeGraph, destinationNode, true);
                 }
             }
 
-            outer.SetNextStateToMain();
+            _currentPosition = transform.position;
+            _currentRotation = transform.rotation;
+
+            return true;
         }
 
         public override void FixedUpdate()
@@ -170,6 +141,8 @@ namespace GooeyArtifacts.EntityStates.MovingInteractables
 
             if (!transform || _pathTraveller is null)
                 return;
+
+            setVisualizersActive(_cvDrawPathData.value);
 
             float estimatedTimeRemaining;
 
@@ -207,7 +180,7 @@ namespace GooeyArtifacts.EntityStates.MovingInteractables
 
             float stepValue = 4f * Mathf.PI * fixedAge;
 
-            _currentPosition = Vector3.MoveTowards(_currentPosition, _targetPosition, (_moveSpeed + 0.25f) * Time.fixedDeltaTime);
+            _currentPosition = Vector3.MoveTowards(_currentPosition, _targetPosition, moveDelta + (1f * Time.fixedDeltaTime));
             _currentRotation = Quaternion.RotateTowards(_currentRotation, _targetRotation, 135f * Time.fixedDeltaTime);
 
             _currentPositionVisualizer?.transform.SetPositionAndRotation(_currentPosition, _currentRotation);
@@ -329,6 +302,69 @@ namespace GooeyArtifacts.EntityStates.MovingInteractables
             normal = -down;
             properPosition = position;
             return false;
+        }
+
+        void setVisualizersActive(bool active)
+        {
+            if (_areVisualizersActive == active)
+                return;
+
+            _areVisualizersActive = active;
+
+            if (_hasCreatedPathVisualizers)
+            {
+                foreach (DebugOverlay.MeshDrawer pathDrawer in _pathDrawers)
+                {
+                    pathDrawer.enabled = active;
+                }
+            }
+            else
+            {
+                if (active)
+                {
+                    NodeGraph nodeGraph = SceneInfo.instance ? SceneInfo.instance.GetNodeGraph(nodeGraphType) : null;
+                    if (nodeGraph)
+                    {
+                        using WireMeshBuilder meshBuilder = new WireMeshBuilder();
+
+                        static DebugOverlay.MeshDrawer createOwnerMeshDrawer(WireMeshBuilder meshBuilder)
+                        {
+                            DebugOverlay.MeshDrawer drawer = DebugOverlay.GetMeshDrawer();
+                            drawer.hasMeshOwnership = true;
+                            drawer.mesh = meshBuilder.GenerateMesh();
+                            return drawer;
+                        }
+
+                        Vector3 previousPosition = _currentPosition;
+                        for (int i = 0; i < _path.waypointsCount; i++)
+                        {
+                            if (nodeGraph.GetNodePosition(_path[i].nodeIndex, out Vector3 position))
+                            {
+                                meshBuilder.AddLine(previousPosition, Color.yellow, position, Color.yellow);
+                                previousPosition = position;
+                            }
+                        }
+
+                        _pathDrawers.Add(createOwnerMeshDrawer(meshBuilder));
+
+                        meshBuilder.Clear();
+                        meshBuilder.AddLine(Vector3.zero, Color.green, Vector3.up, Color.green);
+                        meshBuilder.AddLine(Vector3.zero, Color.green, Vector3.forward, Color.green);
+                        meshBuilder.AddLine(Vector3.left, Color.green, Vector3.right, Color.green);
+
+                        _pathDrawers.Add(_currentTargetPositionVisualizer = createOwnerMeshDrawer(meshBuilder));
+
+                        meshBuilder.Clear();
+                        meshBuilder.AddLine(Vector3.zero, Color.red, Vector3.up, Color.red);
+                        meshBuilder.AddLine(Vector3.zero, Color.red, Vector3.forward, Color.red);
+                        meshBuilder.AddLine(Vector3.left, Color.red, Vector3.right, Color.red);
+
+                        _pathDrawers.Add(_currentPositionVisualizer = createOwnerMeshDrawer(meshBuilder));
+
+                        _hasCreatedPathVisualizers = true;
+                    }
+                }
+            }
         }
     }
 }
