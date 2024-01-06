@@ -14,6 +14,6 @@
 		"ARTIFACT_MOVING_INTERACTABLES_DESCRIPTION": "Interactables randomly wander around the stage.",
 
 		"ARTIFACT_ALL_ITEMS_BREAKABLE_NAME": "Artifact of Fracturing",
-		"ARTIFACT_ALL_ITEMS_BREAKABLE_DESCRIPTION": "Up to 7 unique items are broken at low health.",
+		"ARTIFACT_ALL_ITEMS_BREAKABLE_DESCRIPTION": "All items can break at low health. The 7 newest unique items are broken each time.",
 	}
 }

@@ -2,7 +2,7 @@
 	strings:
 	{
 		"ITEM_GENERIC_BROKEN_NAME": "Pile of Scrap",
-		"ITEM_GENERIC_BROKEN_DESC": "The remains of a broken item. Nice job, dingus.",
-		"ITEM_GENERIC_BROKEN_PICKUP": "The remains of a broken item. Nice job, dingus."
+		"ITEM_GENERIC_BROKEN_DESC": "Useless remains of a broken item. Nice job, dingus.",
+		"ITEM_GENERIC_BROKEN_PICKUP": "Useless remains of a broken item. Nice job, dingus."
 	}
 }
