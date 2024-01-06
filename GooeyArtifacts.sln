@@ -17,6 +17,7 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "en", "en", "{7EFA1DF7-3B88-47D0-9F5E-674A669469F9}"
 	ProjectSection(SolutionItems) = preProject
 		lang\en\Artifacts.txt = lang\en\Artifacts.txt
+		lang\en\Items.txt = lang\en\Items.txt
 	EndProjectSection
 EndProject
 Global

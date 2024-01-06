@@ -1,5 +1,6 @@
 ﻿using GooeyArtifacts.Artifacts;
 using GooeyArtifacts.EntityStates;
+using GooeyArtifacts.Items;
 using RoR2.ContentManagement;
 using System.Collections;
 using System.Linq;
@@ -30,6 +31,7 @@ namespace GooeyArtifacts
             _contentPack.identifier = identifier;
 #pragma warning restore Publicizer001 // Accessing a member that was not originally public
 
+            ItemDefs.AddItemDefsTo(_contentPack.itemDefs);
             ArtifactDefs.AddArtifactDefsTo(_contentPack.artifactDefs);
             _contentPack.entityStateTypes.Add(EntityStateTypeAttribute.GetAllEntityStateTypes().ToArray());
 

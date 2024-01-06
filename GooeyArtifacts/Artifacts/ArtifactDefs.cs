@@ -3,7 +3,6 @@ using GooeyArtifacts.Utils.Extensions;
 using RoR2;
 using RoR2.ContentManagement;
 using UnityEngine;
-using UnityEngine.AddressableAssets;
 
 namespace GooeyArtifacts.Artifacts
 {
@@ -16,6 +15,8 @@ namespace GooeyArtifacts.Artifacts
         public static readonly ArtifactDef PillarsEveryStage;
 
         public static readonly ArtifactDef MovingInteractables;
+
+        public static readonly ArtifactDef AllItemsBreakable;
 
         static ArtifactDefs()
         {
@@ -66,6 +67,18 @@ namespace GooeyArtifacts.Artifacts
                 MovingInteractables.smallIconSelectedSprite = IconLoader.LoadSpriteFromBytes(Properties.Resources.MovingInteractablesIconSelected);
                 MovingInteractables.smallIconDeselectedSprite = IconLoader.LoadSpriteFromBytes(Properties.Resources.MovingInteractablesIconDeselected);
             }
+
+            // AllItemsBreakable
+            {
+                AllItemsBreakable = ScriptableObject.CreateInstance<ArtifactDef>();
+                AllItemsBreakable.cachedName = nameof(AllItemsBreakable);
+
+                AllItemsBreakable.nameToken = "ARTIFACT_ALL_ITEMS_BREAKABLE_NAME";
+                AllItemsBreakable.descriptionToken = "ARTIFACT_ALL_ITEMS_BREAKABLE_DESCRIPTION";
+
+                AllItemsBreakable.smallIconSelectedSprite = IconLoader.LoadSpriteFromBytes(Properties.Resources.AllItemsBreakableIconSelected);
+                AllItemsBreakable.smallIconDeselectedSprite = IconLoader.LoadSpriteFromBytes(Properties.Resources.AllItemsBreakableIconDeselected);
+            }
         }
 
         internal static void AddArtifactDefsTo(NamedAssetCollection<ArtifactDef> collection)
@@ -75,7 +88,8 @@ namespace GooeyArtifacts.Artifacts
                 MonsterCopyPlayerItems,
                 PlayerItemCurse,
                 PillarsEveryStage,
-                MovingInteractables
+                MovingInteractables,
+                AllItemsBreakable
             });
         }
 

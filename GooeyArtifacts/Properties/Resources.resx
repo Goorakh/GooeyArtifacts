@@ -118,6 +118,15 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <assembly alias="System.Windows.Forms" name="System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
+  <data name="AllItemsBreakableIconDeselected" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\AllItemsBreakableIconDeselected.png;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="AllItemsBreakableIconSelected" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\AllItemsBreakableIconSelected.png;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="GenericBrokenItemPickupSprite" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\GenericBrokenItem.png;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
   <data name="MonsterCopyPlayerItemsIconDeselected" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\MonsterCopyPlayerItemsIconDeselected.png;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>

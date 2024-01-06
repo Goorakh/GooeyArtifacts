@@ -63,6 +63,36 @@ namespace GooeyArtifacts.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Byte[].
         /// </summary>
+        internal static byte[] AllItemsBreakableIconDeselected {
+            get {
+                object obj = ResourceManager.GetObject("AllItemsBreakableIconDeselected", resourceCulture);
+                return ((byte[])(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Byte[].
+        /// </summary>
+        internal static byte[] AllItemsBreakableIconSelected {
+            get {
+                object obj = ResourceManager.GetObject("AllItemsBreakableIconSelected", resourceCulture);
+                return ((byte[])(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Byte[].
+        /// </summary>
+        internal static byte[] GenericBrokenItemPickupSprite {
+            get {
+                object obj = ResourceManager.GetObject("GenericBrokenItemPickupSprite", resourceCulture);
+                return ((byte[])(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Byte[].
+        /// </summary>
         internal static byte[] MonsterCopyPlayerItemsIconDeselected {
             get {
                 object obj = ResourceManager.GetObject("MonsterCopyPlayerItemsIconDeselected", resourceCulture);
