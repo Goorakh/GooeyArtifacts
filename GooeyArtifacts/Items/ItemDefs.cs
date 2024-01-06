@@ -38,13 +38,13 @@ namespace GooeyArtifacts.Items
 
 #if DEBUG
         [ConCommand(commandName = "dump_item_icons")]
-        static void CCDumpArtifactIcons(ConCommandArgs args)
+        static void CCDumpItemIcons(ConCommandArgs args)
         {
-            static void dumpArtifactIcons(ItemDef item)
-            {
-                string path = System.IO.Path.Combine(Main.PluginDirectory, "items_dump");
-                System.IO.Directory.CreateDirectory(path);
+            string path = System.IO.Path.Combine(Main.PluginDirectory, "items_dump");
+            System.IO.Directory.CreateDirectory(path);
 
+            void dumpItemIcons(ItemDef item)
+            {
                 void writeSpriteToFile(Sprite sprite, string fileName)
                 {
                     if (!sprite)
@@ -64,7 +64,7 @@ namespace GooeyArtifacts.Items
 
             foreach (ItemDef item in ItemCatalog.allItemDefs)
             {
-                dumpArtifactIcons(item);
+                dumpItemIcons(item);
             }
         }
 #endif
