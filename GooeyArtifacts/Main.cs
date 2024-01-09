@@ -5,6 +5,8 @@ using System.IO;
 namespace GooeyArtifacts
 {
     [BepInPlugin(PluginGUID, PluginName, PluginVersion)]
+    [BepInDependency(R2API.PrefabAPI.PluginGUID)]
+    [BepInDependency(R2API.RecalculateStatsAPI.PluginGUID)]
     public class Main : BaseUnityPlugin
     {
         public const string PluginGUID = PluginAuthor + "." + PluginName;
