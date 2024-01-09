@@ -124,8 +124,17 @@
   <data name="AllItemsBreakableIconSelected" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\AllItemsBreakableIconSelected.png;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
+  <data name="ExpiringItemsIconDeselected" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\ExpiringItemsIconDeselected.png;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="ExpiringItemsIconSelected" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\ExpiringItemsIconSelected.png;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
   <data name="GenericBrokenItemPickupSprite" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\GenericBrokenItem.png;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="ItemExpirationTimerIcon" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\ItemExpirationTimerIcon.png;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
   <data name="MonsterCopyPlayerItemsIconDeselected" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\MonsterCopyPlayerItemsIconDeselected.png;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>

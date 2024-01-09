@@ -15,5 +15,8 @@
 
 		"ARTIFACT_ALL_ITEMS_BREAKABLE_NAME": "Artifact of Fracturing",
 		"ARTIFACT_ALL_ITEMS_BREAKABLE_DESCRIPTION": "All items can break at low health. The 7 newest unique items are broken each time.",
+
+		"ARTIFACT_EXPIRING_ITEMS_NAME": "Artifact of Decay",
+		"ARTIFACT_EXPIRING_ITEMS_DESCRIPTION": "Increase interactable spawns by 25%. All items are temporary.",
 	}
 }

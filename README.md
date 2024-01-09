@@ -1,6 +1,6 @@
 # Gooey Artifacts
 
-Currently features 5 ~~dumb ideas~~ cool artifacts:
+Currently features 6 ~~dumb ideas~~ cool artifacts:
 
 | Artifact | Description |
 | :------: | ----------- |
@@ -9,6 +9,7 @@ Currently features 5 ~~dumb ideas~~ cool artifacts:
 | <img src="https://cdn.discordapp.com/attachments/526159007442927648/1192117972811141220/PillarsEveryStageIconSelected.png?ex=65a7e961&is=65957461&hm=fc05a3e4e05c6cdcf71a0a4baf8dc397b83b8d38bb3ce8c1de47d25520ddb499&" alt="Game Design" width=150 /> <br> Artifact of Game Design | Pillars spawn on every stage, which must be charged before activating the teleporter. |
 | <img src="https://cdn.discordapp.com/attachments/526159007442927648/1192117990980866098/MovingInteractablesIconSelected.png?ex=65a7e965&is=65957465&hm=2d05f8b58fad3d26ffaf87b4327f3eba1fd5c46bcc167faa85398252ea8254a3&" alt="Redecorating" width=150 /> <br> Artifact of Redecorating | Interactables randomly wander around the stage. |
 | <img src="https://cdn.discordapp.com/attachments/526159007442927648/1193230590397386803/AllItemsBreakableIconSelected.png?ex=65abf595&is=65998095&hm=e7b9fa5cb46f747274d668ad18ace9ea57ef03df0ce360817f1e52d43c4aadc2&" alt="Fracturing" width=150 /> <br> Artifact of Fracturing | All items can break at low health. The 7 newest unique items are broken each time. |
+| <img src="https://cdn.discordapp.com/attachments/526159007442927648/1194121852629553262/ExpiringItemsIconSelected.png?ex=65af33a3&is=659cbea3&hm=669cc1318f8035354ca6860c6998a01d134eddfa16d95950774009e5f7c9a2f0&" alt="Decay" width=150 /> <br> Artifact of Decay | Increase interactable spawns by 25%. All items are temporary. |
 
 <br>
 <br>

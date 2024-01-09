@@ -18,6 +18,8 @@ namespace GooeyArtifacts.Artifacts
 
         public static readonly ArtifactDef AllItemsBreakable;
 
+        public static readonly ArtifactDef ExpiringItems;
+
         static ArtifactDefs()
         {
             // MonsterCopyPlayerItems
@@ -79,6 +81,18 @@ namespace GooeyArtifacts.Artifacts
                 AllItemsBreakable.smallIconSelectedSprite = IconLoader.LoadSpriteFromBytes(Properties.Resources.AllItemsBreakableIconSelected);
                 AllItemsBreakable.smallIconDeselectedSprite = IconLoader.LoadSpriteFromBytes(Properties.Resources.AllItemsBreakableIconDeselected);
             }
+
+            // ExpiringItems
+            {
+                ExpiringItems = ScriptableObject.CreateInstance<ArtifactDef>();
+                ExpiringItems.cachedName = nameof(ExpiringItems);
+
+                ExpiringItems.nameToken = "ARTIFACT_EXPIRING_ITEMS_NAME";
+                ExpiringItems.descriptionToken = "ARTIFACT_EXPIRING_ITEMS_DESCRIPTION";
+
+                ExpiringItems.smallIconSelectedSprite = IconLoader.LoadSpriteFromBytes(Properties.Resources.ExpiringItemsIconSelected);
+                ExpiringItems.smallIconDeselectedSprite = IconLoader.LoadSpriteFromBytes(Properties.Resources.ExpiringItemsIconDeselected);
+            }
         }
 
         internal static void AddArtifactDefsTo(NamedAssetCollection<ArtifactDef> collection)
@@ -89,7 +103,8 @@ namespace GooeyArtifacts.Artifacts
                 PlayerItemCurse,
                 PillarsEveryStage,
                 MovingInteractables,
-                AllItemsBreakable
+                AllItemsBreakable,
+                ExpiringItems,
             });
         }
 
