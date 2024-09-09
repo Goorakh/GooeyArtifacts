@@ -6,11 +6,8 @@ namespace GooeyArtifacts.Utils
 {
     public class SyncExternalNetworkedObjectTransform : NetworkBehaviour
     {
-        NetworkInstanceId _targetObjectNetId;
+        [SyncVar]
         GameObject _targetObject;
-
-        const uint TARGET_OBJECT_DIRTY_BIT = 1 << 0;
-
         public GameObject TargetObject
         {
             get
@@ -19,12 +16,17 @@ namespace GooeyArtifacts.Utils
             }
             set
             {
-                SetSyncVarGameObject(value, ref _targetObject, TARGET_OBJECT_DIRTY_BIT, ref _targetObjectNetId);
+                if (_targetObject == value)
+                    return;
 
-                if (value)
+                _targetObject = value;
+
+                if (_targetObject)
                 {
-                    Transform targetTransform = value.transform;
+                    Transform targetTransform = _targetObject.transform;
                     transform.SetPositionAndRotation(targetTransform.position, targetTransform.rotation);
+
+                    updateClientObjectTransform();
                 }
             }
         }
@@ -41,26 +43,21 @@ namespace GooeyArtifacts.Utils
             _netTransform = GetComponent<NetworkTransform>();
         }
 
-        public override void PreStartClient()
+        public override void OnStartClient()
         {
-            if (!_targetObjectNetId.IsEmpty())
-            {
-                _targetObject = ClientScene.FindLocalObject(_targetObjectNetId);
-                updateClientObjectTransform();
-            }
+            base.OnStartClient();
+
+            updateClientObjectTransform();
         }
 
         void Update()
         {
-            if (hasAuthority)
+            if (NetworkServer.active)
             {
                 if (_targetObject)
                 {
                     Transform targetTransform = _targetObject.transform;
-                    if (targetTransform.hasChanged)
-                    {
-                        transform.SetPositionAndRotation(targetTransform.position, targetTransform.rotation);
-                    }
+                    transform.SetPositionAndRotation(targetTransform.position, targetTransform.rotation);
                 }
             }
             else
@@ -99,44 +96,6 @@ namespace GooeyArtifacts.Utils
                 targetTransform.SetPositionAndRotation(targetPosition, targetRotation);
                 _targetPositionSmoothVelocity = Vector3.zero;
                 _targetRotationSmoothVelocity = Quaternion.identity;
-            }
-        }
-
-        public override bool OnSerialize(NetworkWriter writer, bool initialState)
-        {
-            if (initialState)
-            {
-                writer.Write(_targetObject);
-
-                return true;
-            }
-
-            uint dirtyBits = syncVarDirtyBits;
-            writer.WritePackedUInt32(dirtyBits);
-
-            bool anythingWritten = false;
-
-            if ((dirtyBits & TARGET_OBJECT_DIRTY_BIT) != 0)
-            {
-                writer.Write(_targetObject);
-                anythingWritten = true;
-            }
-
-            return anythingWritten;
-        }
-
-        public override void OnDeserialize(NetworkReader reader, bool initialState)
-        {
-            if (initialState)
-            {
-                _targetObjectNetId = reader.ReadNetworkId();
-                return;
-            }
-
-            uint dirtyBits = reader.ReadPackedUInt32();
-            if ((dirtyBits & TARGET_OBJECT_DIRTY_BIT) != 0)
-            {
-                _targetObject = reader.ReadGameObject();
             }
         }
     }

@@ -50,35 +50,11 @@ namespace GooeyArtifacts.Artifacts.PillarsEveryStage
             }
         }
 
-        int _requiredPillarCount;
-        const uint REQUIRED_PILLAR_COUNT_DIRTY_BIT = 1 << 0;
+        [SyncVar]
+        public int RequiredPillarCount;
 
-        public int RequiredPillarCount
-        {
-            get
-            {
-                return _requiredPillarCount;
-            }
-            set
-            {
-                SetSyncVar(value, ref _requiredPillarCount, REQUIRED_PILLAR_COUNT_DIRTY_BIT);
-            }
-        }
-
-        int _chargedPillarCount;
-        const uint CHARGED_PILLAR_COUNT_DIRTY_BIT = 1 << 1;
-
-        public int ChargedPillarCount
-        {
-            get
-            {
-                return _chargedPillarCount;
-            }
-            set
-            {
-                SetSyncVar(value, ref _chargedPillarCount, CHARGED_PILLAR_COUNT_DIRTY_BIT);
-            }
-        }
+        [SyncVar]
+        public int ChargedPillarCount;
 
         bool _wasTeleporterLocked;
 
@@ -224,59 +200,6 @@ namespace GooeyArtifacts.Artifacts.PillarsEveryStage
                 }
 
                 _wasTeleporterLocked = isLocked;
-            }
-        }
-
-        public override bool OnSerialize(NetworkWriter writer, bool initialState)
-        {
-            if (initialState)
-            {
-                writer.WritePackedUInt32((uint)_requiredPillarCount);
-                writer.WritePackedUInt32((uint)_chargedPillarCount);
-
-                return true;
-            }
-
-            uint dirtyBits = syncVarDirtyBits;
-            writer.WritePackedUInt32(dirtyBits);
-
-            bool anythingWritten = false;
-
-            if ((dirtyBits & REQUIRED_PILLAR_COUNT_DIRTY_BIT) != 0)
-            {
-                writer.Write((uint)_requiredPillarCount);
-                anythingWritten = true;
-            }
-
-            if ((dirtyBits & CHARGED_PILLAR_COUNT_DIRTY_BIT) != 0)
-            {
-                writer.Write((uint)_chargedPillarCount);
-                anythingWritten = true;
-            }
-
-            return anythingWritten;
-        }
-
-        public override void OnDeserialize(NetworkReader reader, bool initialState)
-        {
-            if (initialState)
-            {
-                _requiredPillarCount = (int)reader.ReadPackedUInt32();
-                _chargedPillarCount = (int)reader.ReadPackedUInt32();
-
-                return;
-            }
-
-            uint dirtyBits = reader.ReadPackedUInt32();
-
-            if ((dirtyBits & REQUIRED_PILLAR_COUNT_DIRTY_BIT) != 0)
-            {
-                _requiredPillarCount = (int)reader.ReadPackedUInt32();
-            }
-
-            if ((dirtyBits & CHARGED_PILLAR_COUNT_DIRTY_BIT) != 0)
-            {
-                _chargedPillarCount = (int)reader.ReadPackedUInt32();
             }
         }
     }
