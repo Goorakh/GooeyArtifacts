@@ -11,11 +11,10 @@ namespace GooeyArtifacts.Artifacts.MovingInteractables
 {
     public static class MovingInteractablesArtifactManager
     {
-        static readonly InteractableSpawnCard[] _spawnCardBlacklist = new InteractableSpawnCard[]
-        {
+        static readonly InteractableSpawnCard[] _spawnCardBlacklist = [
             Addressables.LoadAssetAsync<InteractableSpawnCard>("RoR2/DLC1/GameModes/InfiniteTowerRun/InfiniteTowerAssets/iscInfiniteTowerSafeWard.asset").WaitForCompletion(),
             Addressables.LoadAssetAsync<InteractableSpawnCard>("RoR2/DLC1/GameModes/InfiniteTowerRun/InfiniteTowerAssets/iscInfiniteTowerSafeWardAwaitingInteraction.asset").WaitForCompletion()
-        };
+        ];
 
         [SystemInitializer]
         static void Init()

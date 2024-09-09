@@ -1,5 +1,4 @@
-﻿using MonoMod.Cil;
-using RoR2;
+﻿using RoR2;
 using UnityEngine;
 using UnityEngine.Networking;
 
@@ -79,7 +78,7 @@ namespace GooeyArtifacts.Artifacts.ExpiringItems
         {
             if (artifactDef != ArtifactDefs.ExpiringItems)
                 return;
-            
+
             if (NetworkServer.active)
             {
                 foreach (ItemHeldTimeTracker itemHeldTimeTracker in InstanceTracker.GetInstancesList<ItemHeldTimeTracker>())
@@ -97,7 +96,7 @@ namespace GooeyArtifacts.Artifacts.ExpiringItems
         {
             if (artifactDef != ArtifactDefs.ExpiringItems)
                 return;
-            
+
             RoR2Application.onFixedUpdate -= onFixedUpdate;
 
             SceneDirector.onPrePopulateSceneServer -= SceneDirector_onPrePopulateSceneServer;

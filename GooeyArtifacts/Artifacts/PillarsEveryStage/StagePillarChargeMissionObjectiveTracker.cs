@@ -5,7 +5,8 @@ namespace GooeyArtifacts.Artifacts.PillarsEveryStage
 {
     public class StagePillarChargeMissionObjectiveTracker : ObjectivePanelController.ObjectiveTracker
     {
-        int _chargedPillars, _requiredPillars;
+        int _chargedPillars;
+        int _requiredPillars;
 
         public override string GenerateString()
         {

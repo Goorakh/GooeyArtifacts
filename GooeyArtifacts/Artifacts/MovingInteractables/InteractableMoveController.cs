@@ -26,12 +26,16 @@ namespace GooeyArtifacts.Artifacts.MovingInteractables
                     if (!_interactableTransformSyncController)
                     {
                         GameObject syncNetObjectTransformObj = GameObject.Instantiate(Prefabs.SyncExternalNetObjectTransformPrefab);
-                        NetworkServer.Spawn(syncNetObjectTransformObj);
 
                         _interactableTransformSyncController = syncNetObjectTransformObj.GetComponent<SyncExternalNetworkedObjectTransform>();
-                    }
+                        _interactableTransformSyncController.TargetObject = value;
 
-                    _interactableTransformSyncController.TargetObject = value;
+                        NetworkServer.Spawn(syncNetObjectTransformObj);
+                    }
+                    else
+                    {
+                        _interactableTransformSyncController.TargetObject = value;
+                    }
                 }
                 else
                 {

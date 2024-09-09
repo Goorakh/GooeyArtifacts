@@ -17,12 +17,16 @@ namespace GooeyArtifacts.Items
                 GenericBrokenItem = ScriptableObject.CreateInstance<ItemDef>();
                 GenericBrokenItem.name = nameof(GenericBrokenItem);
 
+#pragma warning disable CS0618 // Type or member is obsolete
                 GenericBrokenItem.deprecatedTier = ItemTier.NoTier;
+#pragma warning restore CS0618 // Type or member is obsolete
                 GenericBrokenItem.canRemove = false;
 
                 GenericBrokenItem.nameToken = "ITEM_GENERIC_BROKEN_NAME";
                 GenericBrokenItem.descriptionToken = "ITEM_GENERIC_BROKEN_DESC";
                 GenericBrokenItem.pickupToken = "ITEM_GENERIC_BROKEN_PICKUP";
+
+                GenericBrokenItem.isConsumed = true;
 
                 GenericBrokenItem.pickupIconSprite = IconLoader.LoadSpriteFromBytes(Properties.Resources.GenericBrokenItemPickupSprite);
             }
@@ -30,10 +34,9 @@ namespace GooeyArtifacts.Items
 
         internal static void AddItemDefsTo(NamedAssetCollection<ItemDef> itemDefs)
         {
-            itemDefs.Add(new ItemDef[]
-            {
+            itemDefs.Add([
                 GenericBrokenItem
-            });
+            ]);
         }
 
 #if DEBUG

@@ -1,5 +1,4 @@
 ﻿using RoR2;
-using RoR2.Navigation;
 using UnityEngine;
 
 namespace GooeyArtifacts.Utils

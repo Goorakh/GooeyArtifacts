@@ -28,9 +28,7 @@ namespace GooeyArtifacts.Artifacts.ExpiringItems
             {
                 orig(self, desiredItemCount);
 
-#pragma warning disable Publicizer001 // Accessing a member that was not originally public
                 List<ItemIcon> itemIcons = self.itemIcons;
-#pragma warning restore Publicizer001 // Accessing a member that was not originally public
 
                 if (itemIcons is null)
                     return;
@@ -39,9 +37,7 @@ namespace GooeyArtifacts.Artifacts.ExpiringItems
                 {
                     if (icon.TryGetComponent(out ItemExpirationTimerDisplayController itemExpirationDisplay))
                     {
-#pragma warning disable Publicizer001 // Accessing a member that was not originally public
                         itemExpirationDisplay.OwnerInventory = self.inventory;
-#pragma warning restore Publicizer001 // Accessing a member that was not originally public
                     }
                 }
             };
@@ -129,9 +125,7 @@ namespace GooeyArtifacts.Artifacts.ExpiringItems
             if (!OwnerInventory || !_itemHeldTimeTracker)
                 return false;
 
-#pragma warning disable Publicizer001 // Accessing a member that was not originally public
             ItemIndex itemIndex = _itemIcon.itemIndex;
-#pragma warning restore Publicizer001 // Accessing a member that was not originally public
 
             if (!ExpiringItemsArtifactManager.ItemCanExpireFilter(itemIndex))
                 return false;
@@ -152,9 +146,7 @@ namespace GooeyArtifacts.Artifacts.ExpiringItems
             {
                 SetTimerFraction(fraction);
 
-#pragma warning disable Publicizer001 // Accessing a member that was not originally public
                 ItemIndex itemIndex = _itemIcon.itemIndex;
-#pragma warning restore Publicizer001 // Accessing a member that was not originally public
 
                 Color timerColor = Color.white;
 

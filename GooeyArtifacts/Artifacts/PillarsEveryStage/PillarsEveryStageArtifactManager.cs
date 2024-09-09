@@ -50,13 +50,12 @@ namespace GooeyArtifacts.Artifacts.PillarsEveryStage
                 return spawnCard;
             }
 
-            _pillarSpawnCards = new InteractableSpawnCard[]
-            {
+            _pillarSpawnCards = [
                 createPillarSpawnCard("RoR2/Base/moon2/MoonBatteryBlood.prefab"),
                 createPillarSpawnCard("RoR2/Base/moon2/MoonBatteryDesign.prefab"),
                 createPillarSpawnCard("RoR2/Base/moon2/MoonBatteryMass.prefab"),
                 createPillarSpawnCard("RoR2/Base/moon2/MoonBatterySoul.prefab")
-            };
+            ];
         }
 
         static bool isValidStageForPillarSpawns()
@@ -99,9 +98,7 @@ namespace GooeyArtifacts.Artifacts.PillarsEveryStage
             if (!RunArtifactManager.instance || !RunArtifactManager.instance.IsArtifactEnabled(ArtifactDefs.PillarsEveryStage))
                 return;
 
-#pragma warning disable Publicizer001 // Accessing a member that was not originally public
             initializePillars(new Xoroshiro128Plus(self.rng));
-#pragma warning restore Publicizer001 // Accessing a member that was not originally public
         }
 
         static void initializePillars(Xoroshiro128Plus rng)

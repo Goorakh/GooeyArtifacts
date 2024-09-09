@@ -69,12 +69,16 @@ namespace GooeyArtifacts.Patches
                         if (!_lockObjectTransformSyncController)
                         {
                             GameObject syncNetObjectTransformObj = GameObject.Instantiate(Prefabs.SyncExternalNetObjectTransformPrefab);
-                            NetworkServer.Spawn(syncNetObjectTransformObj);
-
                             _lockObjectTransformSyncController = syncNetObjectTransformObj.GetComponent<SyncExternalNetworkedObjectTransform>();
-                        }
 
-                        _lockObjectTransformSyncController.TargetObject = value;
+                            _lockObjectTransformSyncController.TargetObject = value;
+
+                            NetworkServer.Spawn(syncNetObjectTransformObj);
+                        }
+                        else
+                        {
+                            _lockObjectTransformSyncController.TargetObject = value;
+                        }
                     }
                     else
                     {

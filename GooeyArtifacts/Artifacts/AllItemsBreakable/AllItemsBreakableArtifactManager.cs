@@ -91,9 +91,7 @@ namespace GooeyArtifacts.Artifacts.AllItemsBreakable
             if (!inventory)
                 return;
 
-#pragma warning disable Publicizer001 // Accessing a member that was not originally public
             ref bool hasLowHealthItem = ref self.hasLowHealthItem;
-#pragma warning restore Publicizer001 // Accessing a member that was not originally public
 
             hasLowHealthItem = hasLowHealthItem || (RunArtifactManager.instance && RunArtifactManager.instance.IsArtifactEnabled(ArtifactDefs.AllItemsBreakable) && inventory.itemAcquisitionOrder.Any(isBreakableFilter));
         }

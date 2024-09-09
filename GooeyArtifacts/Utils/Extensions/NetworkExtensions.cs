@@ -9,7 +9,7 @@ namespace GooeyArtifacts.Utils.Extensions
     {
         public static void WriteItemPickupTimestamps(this NetworkWriter writer, Run.FixedTimeStamp[] itemPickupTimeStamps)
         {
-            List<uint> indicesWithValue = new List<uint>();
+            List<uint> indicesWithValue = new List<uint>(itemPickupTimeStamps.Length);
             for (uint i = 0; i < itemPickupTimeStamps.Length; i++)
             {
                 if (!itemPickupTimeStamps[i].isInfinity)

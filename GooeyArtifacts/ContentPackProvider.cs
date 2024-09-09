@@ -27,9 +27,7 @@ namespace GooeyArtifacts
 
         public IEnumerator LoadStaticContentAsync(LoadStaticContentAsyncArgs args)
         {
-#pragma warning disable Publicizer001 // Accessing a member that was not originally public
             _contentPack.identifier = identifier;
-#pragma warning restore Publicizer001 // Accessing a member that was not originally public
 
             ItemDefs.AddItemDefsTo(_contentPack.itemDefs);
             ArtifactDefs.AddArtifactDefsTo(_contentPack.artifactDefs);

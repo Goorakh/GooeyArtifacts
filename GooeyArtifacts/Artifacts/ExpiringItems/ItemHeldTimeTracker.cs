@@ -86,7 +86,7 @@ namespace GooeyArtifacts.Artifacts.ExpiringItems
                 SetDirtyBit(ITEM_PICKUP_TIMESTAMPS_DIRTY_BIT);
             }
         }
-        
+
         public override bool OnSerialize(NetworkWriter writer, bool initialState)
         {
             if (initialState)

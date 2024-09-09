@@ -35,7 +35,7 @@ namespace GooeyArtifacts.EntityStates.MovingInteractables
         bool _targetAtEnd;
 
         bool _hasCreatedPathVisualizers;
-        readonly List<DebugOverlay.MeshDrawer> _pathDrawers = new List<DebugOverlay.MeshDrawer>();
+        readonly List<DebugOverlay.MeshDrawer> _pathDrawers = [];
         DebugOverlay.MeshDrawer _currentPositionVisualizer;
         DebugOverlay.MeshDrawer _currentTargetPositionVisualizer;
 
@@ -108,7 +108,7 @@ namespace GooeyArtifacts.EntityStates.MovingInteractables
             PathTask pathTask = nodeGraph.ComputePath(pathRequest);
             if (!pathTask.wasReachable || pathTask.status != PathTask.TaskStatus.Complete)
                 return false;
-            
+
             _pathTraveller = new PathTraveller(_path);
 
             // TODO: Account for RoR2.OccupyNearbyNodes component
@@ -239,7 +239,7 @@ namespace GooeyArtifacts.EntityStates.MovingInteractables
                     return false;
 
                 EntityLocator entityLocator = otherTransform.GetComponentInParent<EntityLocator>();
-                if (entityLocator && entityLocator.entity && !isValidCollision(entityLocator.entity.transform))
+                if (entityLocator && entityLocator.entity && entityLocator.entity.transform.IsChildOf(transform))
                     return false;
 
                 return true;

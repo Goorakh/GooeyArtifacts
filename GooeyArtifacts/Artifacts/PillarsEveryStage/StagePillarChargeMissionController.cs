@@ -12,9 +12,9 @@ namespace GooeyArtifacts.Artifacts.PillarsEveryStage
 {
     public class StagePillarChargeMissionController : NetworkBehaviour
     {
-        GameObject[] _pillarObjectsServer = Array.Empty<GameObject>();
-        HoldoutZoneController[] _pillarHoldoutZoneControllersServer = Array.Empty<HoldoutZoneController>();
-        EntityStateMachine[] _pillarStateMachinesServer = Array.Empty<EntityStateMachine>();
+        GameObject[] _pillarObjectsServer = [];
+        HoldoutZoneController[] _pillarHoldoutZoneControllersServer = [];
+        EntityStateMachine[] _pillarStateMachinesServer = [];
 
         public GameObject[] PillarObjectsServer
         {
@@ -35,7 +35,7 @@ namespace GooeyArtifacts.Artifacts.PillarsEveryStage
                     unsubscribeFromHoldoutZones(_pillarHoldoutZoneControllersServer);
                 }
 
-                value ??= Array.Empty<GameObject>();
+                value ??= [];
 
                 _pillarObjectsServer = value;
                 _pillarHoldoutZoneControllersServer = Array.ConvertAll(_pillarObjectsServer, g => g.GetComponent<HoldoutZoneController>());

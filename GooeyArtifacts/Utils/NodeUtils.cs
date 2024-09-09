@@ -16,9 +16,7 @@ namespace GooeyArtifacts.Utils
             if (!directorCore)
                 return;
 
-#pragma warning disable Publicizer001 // Accessing a member that was not originally public
             ref DirectorCore.NodeReference[] occupiedNodes = ref directorCore.occupiedNodes;
-#pragma warning restore Publicizer001 // Accessing a member that was not originally public
 
             DirectorCore.NodeReference nodeReference = new DirectorCore.NodeReference(nodeGraph, nodeIndex);
             int nodeReferenceIndex = Array.IndexOf(occupiedNodes, nodeReference);

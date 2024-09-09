@@ -97,15 +97,14 @@ namespace GooeyArtifacts.Artifacts
 
         internal static void AddArtifactDefsTo(NamedAssetCollection<ArtifactDef> collection)
         {
-            collection.Add(new ArtifactDef[]
-            {
+            collection.Add([
                 MonsterCopyPlayerItems,
                 PlayerItemCurse,
                 PillarsEveryStage,
                 MovingInteractables,
                 AllItemsBreakable,
                 ExpiringItems,
-            });
+            ]);
         }
 
 #if DEBUG

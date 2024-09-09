@@ -36,10 +36,10 @@ namespace GooeyArtifacts.ThirdParty.Utils
 
             Quaternion derivative = AngularVelocityToDerivative(rotation, angularVelocity);
 
-            Vector4 pred = new Vector4(rotation.x + derivative.x * deltaTime,
-                                       rotation.y + derivative.y * deltaTime,
-                                       rotation.z + derivative.z * deltaTime,
-                                       rotation.w + derivative.w * deltaTime).normalized;
+            Vector4 pred = new Vector4(rotation.x + (derivative.x * deltaTime),
+                                       rotation.y + (derivative.y * deltaTime),
+                                       rotation.z + (derivative.z * deltaTime),
+                                       rotation.w + (derivative.w * deltaTime)).normalized;
 
             return new Quaternion(pred.x, pred.y, pred.z, pred.w);
         }

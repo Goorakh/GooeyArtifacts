@@ -17,9 +17,7 @@ namespace GooeyArtifacts.Patches
         {
             orig(self);
 
-#pragma warning disable Publicizer001 // Accessing a member that was not originally public
             LayoutRebuilder.MarkLayoutForRebuild(self.rectTransform);
-#pragma warning restore Publicizer001 // Accessing a member that was not originally public
         }
     }
 }
