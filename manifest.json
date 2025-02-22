@@ -7,9 +7,9 @@
 	"description": "Dumb ideas made into artifacts, enjoy! Or don't.",
 	"dependencies": [
 		"bbepis-BepInExPack-5.4.2113",
-		"RiskofThunder-HookGenPatcher-1.2.4",
-		"RiskofThunder-R2API_Core-5.1.1",
+		"RiskofThunder-HookGenPatcher-1.2.5",
+		"RiskofThunder-R2API_Core-5.1.5",
 		"RiskofThunder-R2API_Prefab-1.0.4",
-		"RiskofThunder-R2API_RecalculateStats-1.4.0"
+		"RiskofThunder-R2API_RecalculateStats-1.5.0"
 	]
 }

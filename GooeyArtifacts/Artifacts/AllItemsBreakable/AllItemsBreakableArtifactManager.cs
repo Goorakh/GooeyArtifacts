@@ -26,9 +26,9 @@ namespace GooeyArtifacts.Artifacts.AllItemsBreakable
             On.RoR2.UI.HealthBar.CheckInventory += HealthBar_CheckInventory;
         }
 
-        static void HealthComponent_UpdateLastHitTime(On.RoR2.HealthComponent.orig_UpdateLastHitTime orig, HealthComponent self, float damageValue, Vector3 damagePosition, bool damageIsSilent, GameObject attacker)
+        static void HealthComponent_UpdateLastHitTime(On.RoR2.HealthComponent.orig_UpdateLastHitTime orig, HealthComponent self, float damageValue, Vector3 damagePosition, bool damageIsSilent, GameObject attacker, bool delayedDamage, bool firstHitOfDelayedDamage)
         {
-            orig(self, damageValue, damagePosition, damageIsSilent, attacker);
+            orig(self, damageValue, damagePosition, damageIsSilent, attacker, delayedDamage, firstHitOfDelayedDamage);
 
             if (!NetworkServer.active || !self.body || damageValue <= 0f)
                 return;

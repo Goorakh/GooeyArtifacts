@@ -1,3 +1,7 @@
+**-.-.- Changes:**
+
+* Fixed for SotS Items & Elites patch
+
 **1.0.1 Changes:**
 
 * Fixed for SotS
