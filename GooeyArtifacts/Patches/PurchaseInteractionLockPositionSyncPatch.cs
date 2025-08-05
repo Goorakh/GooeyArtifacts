@@ -1,5 +1,6 @@
 ﻿using GooeyArtifacts.Utils;
 using HarmonyLib;
+using HG;
 using MonoMod.RuntimeDetour;
 using RoR2;
 using System.Reflection;
@@ -33,16 +34,11 @@ namespace GooeyArtifacts.Patches
             if (!NetworkServer.active)
                 return;
 
-            LockObjectLocalPositionMaintainer lockPositionMaintainer = self.GetComponent<LockObjectLocalPositionMaintainer>();
-            if (!lockPositionMaintainer)
+            if (value)
             {
-                if (!value)
-                    return;
-
-                lockPositionMaintainer = self.gameObject.AddComponent<LockObjectLocalPositionMaintainer>();
+                LockObjectLocalPositionMaintainer lockPositionMaintainer = self.gameObject.EnsureComponent<LockObjectLocalPositionMaintainer>();
+                lockPositionMaintainer.LockObject = value;
             }
-
-            lockPositionMaintainer.LockObject = value;
         }
 
         class LockObjectLocalPositionMaintainer : MonoBehaviour

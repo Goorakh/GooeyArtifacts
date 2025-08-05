@@ -55,7 +55,7 @@ namespace GooeyArtifacts.Artifacts.MonsterCopyPlayerInventories
             int[] oldItemStacks = ItemCatalog.GetPerItemBuffer<int>();
             _inventory.WriteItemStacks(oldItemStacks);
 
-            List<ItemIndex> itemOrder = new List<ItemIndex>(_inventory.itemAcquisitionOrder);
+            List<ItemIndex> itemOrder = [.. _inventory.itemAcquisitionOrder];
             int[] newItemStacks = ItemCatalog.GetPerItemBuffer<int>();
 
             foreach (PlayerCharacterMasterController playerController in PlayerCharacterMasterController.instances)
@@ -97,7 +97,6 @@ namespace GooeyArtifacts.Artifacts.MonsterCopyPlayerInventories
                 if (itemCountDiff == 0)
                     continue;
 
-#if DEBUG
                 if (itemCountDiff > 0)
                 {
                     Log.Debug($"Adding {Language.GetString(ItemCatalog.GetItemDef(item).nameToken)} (x{itemCountDiff}) to inventories");
@@ -106,7 +105,6 @@ namespace GooeyArtifacts.Artifacts.MonsterCopyPlayerInventories
                 {
                     Log.Debug($"Removing {Language.GetString(ItemCatalog.GetItemDef(item).nameToken)} (x{-itemCountDiff}) from inventories");
                 }
-#endif
 
                 _inventory.GiveItem(item, itemCountDiff);
 

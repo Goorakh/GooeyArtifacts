@@ -55,11 +55,11 @@ namespace GooeyArtifacts.Artifacts.MovingInteractables
                 yield return new WaitForFixedUpdate();
                 yield return new WaitForFixedUpdate();
 
-                List<GameObject> movableSceneObjects = new List<GameObject>();
-
-                movableSceneObjects.AddRange(GameObject.FindObjectsOfType<PortalStatueBehavior>()
-                                                       .Where(p => p.portalType == PortalStatueBehavior.PortalType.Shop)
-                                                       .Select(c => c.gameObject));
+                List<GameObject> movableSceneObjects = [
+                    .. GameObject.FindObjectsOfType<PortalStatueBehavior>()
+                                 .Where(p => p.portalType == PortalStatueBehavior.PortalType.Shop)
+                                 .Select(c => c.gameObject)
+                ];
 
                 void addObjectsWithComponent<TComponent>(string holderPath) where TComponent : Component
                 {
