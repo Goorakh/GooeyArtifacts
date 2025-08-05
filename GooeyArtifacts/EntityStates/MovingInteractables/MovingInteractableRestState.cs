@@ -108,9 +108,7 @@ namespace GooeyArtifacts.EntityStates.MovingInteractables
                     }
                 }
 
-#if DEBUG
                 Log.Debug($"{gameObject}: no valid target position found, resetting state");
-#endif
 
                 outer.SetNextStateToMain();
             }

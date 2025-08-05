@@ -125,9 +125,7 @@ namespace GooeyArtifacts.Artifacts.ExpiringItems
                     {
                         itemHeldTimeTracker.Inventory.RemoveItem(itemIndex);
 
-#if DEBUG
                         Log.Debug($"Removed item {Language.GetString(ItemCatalog.GetItemDef(itemIndex).nameToken)} from {itemHeldTimeTracker.name}");
-#endif
                     }
                 }
             }

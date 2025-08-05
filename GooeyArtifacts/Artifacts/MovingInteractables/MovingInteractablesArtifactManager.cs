@@ -40,9 +40,7 @@ namespace GooeyArtifacts.Artifacts.MovingInteractables
 
             if (!spawnResult.spawnedInstance.GetComponent<NetworkIdentity>())
             {
-#if DEBUG
                 Log.Debug($"Spawned object {spawnResult.spawnedInstance} is not networked");
-#endif
                 return;
             }
 
@@ -116,9 +114,7 @@ namespace GooeyArtifacts.Artifacts.MovingInteractables
 
                     sceneObject.AddComponent<MovableInteractable>();
 
-#if DEBUG
                     Log.Debug($"Added scene movable: {Util.BuildPrefabTransformPath(sceneObject.transform.root, sceneObject.transform, false, true)}");
-#endif
                 }
             }
 

@@ -9,9 +9,7 @@ namespace GooeyArtifacts
             string langFolderPath = Path.Combine(searchFolder, langFolderName);
             if (Directory.Exists(langFolderPath))
             {
-#if DEBUG
                 Log.Debug($"Found lang folder: {langFolderPath}");
-#endif
 
                 RoR2.Language.collectLanguageRootFolders += folders =>
                 {
