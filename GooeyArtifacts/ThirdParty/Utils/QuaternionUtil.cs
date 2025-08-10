@@ -44,7 +44,7 @@ namespace GooeyArtifacts.ThirdParty.Utils
             return new Quaternion(pred.x, pred.y, pred.z, pred.w);
         }
 
-        public static Quaternion SmoothDamp(Quaternion current, Quaternion target, ref Quaternion velocity, float smoothTime, float maxSpeed, float deltaTime)
+        public static Quaternion SmoothDamp(Quaternion current, Quaternion target, ref Vector4 velocity, float smoothTime, float maxSpeed, float deltaTime)
         {
             if (deltaTime < Mathf.Epsilon)
                 return current;

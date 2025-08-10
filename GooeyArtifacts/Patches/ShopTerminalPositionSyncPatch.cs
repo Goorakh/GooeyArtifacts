@@ -1,5 +1,6 @@
 ﻿using GooeyArtifacts.Utils;
 using RoR2;
+using System.Collections;
 using UnityEngine;
 using UnityEngine.Networking;
 
@@ -19,58 +20,32 @@ namespace GooeyArtifacts.Patches
 
             if (NetworkServer.active)
             {
-                self.gameObject.AddComponent<ShopTerminalOffsetMaintainer>();
-
-                GameObject syncNetObjectTransformObj = GameObject.Instantiate(Prefabs.SyncExternalNetObjectTransformPrefab);
-
-                SyncExternalNetworkedObjectTransform syncExternalTransform = syncNetObjectTransformObj.GetComponent<SyncExternalNetworkedObjectTransform>();
-                syncExternalTransform.TargetObject = self.gameObject;
-
-                NetworkServer.Spawn(syncNetObjectTransformObj);
+                self.StartCoroutine(waitForServerInitThenSyncTerminalTransform(self));
             }
         }
 
-        class ShopTerminalOffsetMaintainer : MonoBehaviour
+        static IEnumerator waitForServerInitThenSyncTerminalTransform(ShopTerminalBehavior terminalBehavior)
         {
-            ShopTerminalBehavior _terminalBehavior;
-
-            Matrix4x4 _terminalLocalTransform = Matrix4x4.identity;
-
-            bool _isInitialized;
-
-            void Awake()
+            while (terminalBehavior && !terminalBehavior.serverMultiShopController)
             {
-                _terminalBehavior = GetComponent<ShopTerminalBehavior>();
+                yield return null;
             }
 
-            void FixedUpdate()
-            {
-                if (!_terminalBehavior)
-                {
-                    Destroy(this);
-                    return;
-                }
+            if (!terminalBehavior || !terminalBehavior.serverMultiShopController)
+                yield break;
+            
+            MultiShopController multiShopController = terminalBehavior.serverMultiShopController;
+            Transform multiShopTransform = multiShopController.transform;
 
-                MultiShopController multiShopController = _terminalBehavior.serverMultiShopController;
-                if (!_isInitialized)
-                {
-                    if (multiShopController)
-                    {
-                        _terminalLocalTransform = multiShopController.transform.worldToLocalMatrix * Matrix4x4.TRS(transform.position, transform.rotation, Vector3.one);
+            terminalBehavior.transform.GetPositionAndRotation(out Vector3 terminalPosition, out Quaternion terminalRotation);
+            Vector3 terminalLocalPosition = multiShopTransform.InverseTransformPoint(terminalPosition);
+            Quaternion terminalLocalRotation = Quaternion.Inverse(multiShopTransform.rotation) * terminalRotation;
 
-                        _isInitialized = true;
-                    }
-                }
-                else if (!multiShopController)
-                {
-                    _isInitialized = false;
-                }
-                else
-                {
-                    Matrix4x4 matrix = multiShopController.transform.localToWorldMatrix * _terminalLocalTransform;
-                    transform.SetPositionAndRotation(matrix.GetColumn(3), matrix.rotation);
-                }
-            }
+            GameObject pseudoParentControllerObj = GameObject.Instantiate(Prefabs.SyncExternalNetObjectPseudoParentPrefab, terminalLocalPosition, terminalLocalRotation);
+            SyncExternalTransformPseudoParent pseudoParentController = pseudoParentControllerObj.GetComponent<SyncExternalTransformPseudoParent>();
+            pseudoParentController.Parent = multiShopTransform.gameObject;
+            pseudoParentController.TargetObject = terminalBehavior.gameObject;
+            NetworkServer.Spawn(pseudoParentControllerObj);
         }
     }
 }

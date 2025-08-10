@@ -19,6 +19,8 @@ namespace GooeyArtifacts
 
         public static GameObject SyncExternalNetObjectTransformPrefab { get; private set; }
 
+        public static GameObject SyncExternalNetObjectPseudoParentPrefab { get; private set; }
+
         public static GameObject InteractableMoveControllerPrefab { get; private set; }
 
         static GameObject createPrefab(string name, bool networked)
@@ -64,20 +66,34 @@ namespace GooeyArtifacts
 
                 NetworkTransform networkTransform = SyncExternalNetObjectTransformPrefab.AddComponent<NetworkTransform>();
                 networkTransform.transformSyncMode = NetworkTransform.TransformSyncMode.SyncTransform;
-                networkTransform.sendInterval = 1f / 15f;
+                networkTransform.sendInterval = 1f / 4f;
 
                 SyncExternalNetObjectTransformPrefab.AddComponent<SyncExternalNetworkedObjectTransform>();
             }
 
+            // SyncExternalNetObjectPseudoParentPrefab
+            {
+                SyncExternalNetObjectPseudoParentPrefab = createPrefab(nameof(SyncExternalNetObjectPseudoParentPrefab), true);
+
+                //NetworkTransform networkTransform = SyncExternalNetObjectPseudoParentPrefab.AddComponent<NetworkTransform>();
+                //networkTransform.transformSyncMode = NetworkTransform.TransformSyncMode.SyncTransform;
+                //networkTransform.sendInterval = 1f;
+
+                SyncExternalNetObjectPseudoParentPrefab.AddComponent<SyncExternalTransformPseudoParent>();
+            }
+
             // InteractableMoveControllerPrefab
             {
-                InteractableMoveControllerPrefab = createPrefab("InteractableMoveController", false);
+                InteractableMoveControllerPrefab = createPrefab("InteractableMoveController", true);
 
                 EntityStateMachine stateMachine = InteractableMoveControllerPrefab.AddComponent<EntityStateMachine>();
                 stateMachine.initialStateType = new SerializableEntityStateType(typeof(MovingInteractableRestState));
                 stateMachine.mainStateType = new SerializableEntityStateType(typeof(MovingInteractableRestState));
 
-                InteractableMoveControllerPrefab.AddComponent<InteractableMoveController>();
+                NetworkStateMachine networkStateMachine = InteractableMoveControllerPrefab.AddComponent<NetworkStateMachine>();
+                networkStateMachine.stateMachines = [stateMachine];
+
+                InteractableMoveController moveController = InteractableMoveControllerPrefab.AddComponent<InteractableMoveController>();
             }
         }
     }

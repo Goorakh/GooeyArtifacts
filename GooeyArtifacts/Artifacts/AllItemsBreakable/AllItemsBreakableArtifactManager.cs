@@ -1,29 +1,38 @@
 ﻿using GooeyArtifacts.Items;
+using GooeyArtifacts.Utils;
 using RoR2;
 using RoR2.UI;
 using System.Linq;
 using UnityEngine;
-using UnityEngine.AddressableAssets;
 using UnityEngine.Networking;
 
 namespace GooeyArtifacts.Artifacts.AllItemsBreakable
 {
     public static class AllItemsBreakableArtifactManager
     {
-        static readonly GameObject _watchBreakEffect = Addressables.LoadAssetAsync<GameObject>("RoR2/DLC1/FragileDamageBonus/DelicateWatchProcEffect.prefab").WaitForCompletion();
+        static EffectIndex _itemBreakEffectIndex = EffectIndex.Invalid;
 
-        static bool isBreakableFilter(ItemIndex itemIndex)
-        {
-            ItemDef itemDef = ItemCatalog.GetItemDef(itemIndex);
-            return !itemDef.hidden && itemDef.canRemove;
-        }
-
-        [SystemInitializer]
+        [SystemInitializer(typeof(EffectCatalog))]
         static void Init()
         {
             On.RoR2.HealthComponent.UpdateLastHitTime += HealthComponent_UpdateLastHitTime;
 
             On.RoR2.UI.HealthBar.CheckInventory += HealthBar_CheckInventory;
+
+            AssetLoadUtils.LoadAssetTemporary<GameObject>(RoR2BepInExPack.GameAssetPathsBetter.RoR2_DLC1_FragileDamageBonus.DelicateWatchProcEffect_prefab, watchBreakEffectPrefab =>
+            {
+                _itemBreakEffectIndex = EffectCatalog.FindEffectIndexFromPrefab(watchBreakEffectPrefab);
+                if (_itemBreakEffectIndex == EffectIndex.Invalid)
+                {
+                    Log.Error($"Failed to find item break effect index");
+                }
+            });
+        }
+
+        static bool isBreakableFilter(ItemIndex itemIndex)
+        {
+            ItemDef itemDef = ItemCatalog.GetItemDef(itemIndex);
+            return !itemDef.hidden && itemDef.canRemove;
         }
 
         static void HealthComponent_UpdateLastHitTime(On.RoR2.HealthComponent.orig_UpdateLastHitTime orig, HealthComponent self, float damageValue, Vector3 damagePosition, bool damageIsSilent, GameObject attacker, bool delayedDamage, bool firstHitOfDelayedDamage)
@@ -65,13 +74,17 @@ namespace GooeyArtifacts.Artifacts.AllItemsBreakable
             {
                 inventory.GiveItem(ItemDefs.GenericBrokenItem, totalBrokenItemCount);
 
-                EffectData watchBreakEffectData = new EffectData
+                if (_itemBreakEffectIndex != EffectIndex.Invalid)
                 {
-                    origin = self.transform.position
-                };
-                watchBreakEffectData.SetNetworkedObjectReference(self.gameObject);
+                    EffectData watchBreakEffectData = new EffectData
+                    {
+                        origin = self.transform.position
+                    };
 
-                EffectManager.SpawnEffect(_watchBreakEffect, watchBreakEffectData, true);
+                    watchBreakEffectData.SetNetworkedObjectReference(self.gameObject);
+
+                    EffectManager.SpawnEffect(_itemBreakEffectIndex, watchBreakEffectData, true);
+                }
             }
         }
 
@@ -91,9 +104,7 @@ namespace GooeyArtifacts.Artifacts.AllItemsBreakable
             if (!inventory)
                 return;
 
-            ref bool hasLowHealthItem = ref self.hasLowHealthItem;
-
-            hasLowHealthItem = hasLowHealthItem || (RunArtifactManager.instance && RunArtifactManager.instance.IsArtifactEnabled(ArtifactDefs.AllItemsBreakable) && inventory.itemAcquisitionOrder.Any(isBreakableFilter));
+            self.hasLowHealthItem |= RunArtifactManager.instance && RunArtifactManager.instance.IsArtifactEnabled(ArtifactDefs.AllItemsBreakable) && inventory.itemAcquisitionOrder.Any(isBreakableFilter);
         }
     }
 }

@@ -14,33 +14,91 @@ namespace GooeyArtifacts.Utils
             {
                 return _targetObject;
             }
+
+            [Server]
             set
             {
                 if (_targetObject == value)
                     return;
+
+                if (_targetObject)
+                {
+                    Transform targetTransform = _targetObject.transform;
+
+                    targetTransform.position -= _positionOffset;
+                    targetTransform.rotation *= Quaternion.Inverse(_rotationOffset);
+                }
 
                 _targetObject = value;
 
                 if (_targetObject)
                 {
                     Transform targetTransform = _targetObject.transform;
-                    transform.SetPositionAndRotation(targetTransform.position, targetTransform.rotation);
 
-                    updateClientObjectTransform();
+                    targetTransform.position += _positionOffset;
+                    targetTransform.rotation *= _rotationOffset;
+
+                    updateServerObjectTransform();
                 }
             }
         }
 
+        Vector3 _positionOffset = Vector3.zero;
+        public Vector3 PositionOffset
+        {
+            get
+            {
+                return _positionOffset;
+            }
+            set
+            {
+                if (_targetObject)
+                {
+                    _targetObject.transform.position += value - _positionOffset;
+                }
+
+                _positionOffset = value;
+            }
+        }
+
+        Quaternion _rotationOffset = Quaternion.identity;
+        public Quaternion RotationOffset
+        {
+            get
+            {
+                return _rotationOffset;
+            }
+            set
+            {
+                if (_targetObject)
+                {
+                    _targetObject.transform.rotation *= Quaternion.Inverse(_rotationOffset) * value;
+                }
+
+                _rotationOffset = value;
+            }
+        }
+
+        public bool EnableClientTransformControl;
+
         new Transform transform;
         NetworkTransform _netTransform;
 
-        Vector3 _targetPositionSmoothVelocity;
-        Quaternion _targetRotationSmoothVelocity;
+        Vector3 _targetPositionSmoothVelocity = Vector3.zero;
+        Vector4 _targetRotationSmoothVelocity = Vector4.zero;
 
         void Awake()
         {
             transform = base.transform;
             _netTransform = GetComponent<NetworkTransform>();
+        }
+
+        void OnDestroy()
+        {
+            if (NetworkServer.active)
+            {
+                TargetObject = null;
+            }
         }
 
         public override void OnStartClient()
@@ -54,15 +112,21 @@ namespace GooeyArtifacts.Utils
         {
             if (NetworkServer.active)
             {
-                if (_targetObject)
-                {
-                    Transform targetTransform = _targetObject.transform;
-                    transform.SetPositionAndRotation(targetTransform.position, targetTransform.rotation);
-                }
+                updateServerObjectTransform();
             }
             else
             {
                 updateClientObjectTransform(true, Time.deltaTime);
+            }
+        }
+
+        [Server]
+        void updateServerObjectTransform()
+        {
+            if (_targetObject)
+            {
+                Transform targetTransform = _targetObject.transform;
+                transform.SetPositionAndRotation(targetTransform.position - _positionOffset, targetTransform.rotation * Quaternion.Inverse(_rotationOffset));
             }
         }
 
@@ -81,22 +145,32 @@ namespace GooeyArtifacts.Utils
             if (!_targetObject)
                 return;
 
+            if (EnableClientTransformControl)
+                return;
+
             Transform targetTransform = _targetObject.transform;
+
+            Vector3 position = targetTransform.position - _positionOffset;
+            Quaternion rotation = targetTransform.rotation * Quaternion.Inverse(_rotationOffset);
 
             if (smooth)
             {
                 float smoothTime = _netTransform.sendInterval;
 
-                targetTransform.position = Vector3.SmoothDamp(targetTransform.position, targetPosition, ref _targetPositionSmoothVelocity, smoothTime, float.PositiveInfinity, deltaTime);
+                position = Vector3.SmoothDamp(position, targetPosition, ref _targetPositionSmoothVelocity, smoothTime, float.PositiveInfinity, deltaTime);
 
-                targetTransform.rotation = QuaternionUtil.SmoothDamp(targetTransform.rotation, targetRotation, ref _targetRotationSmoothVelocity, smoothTime, float.PositiveInfinity, deltaTime);
+                rotation = QuaternionUtil.SmoothDamp(rotation, targetRotation, ref _targetRotationSmoothVelocity, smoothTime, float.PositiveInfinity, deltaTime);
             }
             else
             {
-                targetTransform.SetPositionAndRotation(targetPosition, targetRotation);
+                position = targetPosition;
+                rotation = targetRotation;
+
                 _targetPositionSmoothVelocity = Vector3.zero;
-                _targetRotationSmoothVelocity = Quaternion.identity;
+                _targetRotationSmoothVelocity = Vector4.zero;
             }
+
+            targetTransform.SetPositionAndRotation(position + _positionOffset, rotation * _rotationOffset);
         }
     }
 }

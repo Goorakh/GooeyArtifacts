@@ -1,4 +1,6 @@
-﻿using UnityEngine;
+﻿using RoR2;
+using UnityEngine;
+using UnityEngine.Networking;
 
 namespace GooeyArtifacts.EntityStates.MovingInteractables
 {
@@ -19,33 +21,56 @@ namespace GooeyArtifacts.EntityStates.MovingInteractables
         {
             base.OnEnter();
 
-            if (spawnCard && spawnCard.slightlyRandomizeOrientation)
+            if (isAuthority)
             {
-                TargetPosition += transform.TransformDirection(Vector3.down * 0.3f);
+                if (spawnCard is InteractableSpawnCard interactableSpawnCard && interactableSpawnCard.slightlyRandomizeOrientation)
+                {
+                    TargetPosition += transform.TransformDirection(Vector3.down * 0.3f);
+                }
+            }
+
+            if (transformSyncController)
+            {
+                transformSyncController.EnableClientTransformControl = true;
             }
 
             _startPosition = transform.position;
             _startRotation = transform.rotation;
         }
 
+        public override void OnSerialize(NetworkWriter writer)
+        {
+            base.OnSerialize(writer);
+
+            writer.Write(TargetRotation);
+            writer.Write(TargetPosition);
+        }
+
+        public override void OnDeserialize(NetworkReader reader)
+        {
+            base.OnDeserialize(reader);
+
+            TargetRotation = reader.ReadQuaternion();
+            TargetPosition = reader.ReadVector3();
+        }
+
         public override void FixedUpdate()
         {
             base.FixedUpdate();
 
-            if (!transform)
-                return;
+            float fraction = Mathf.Clamp01(fixedAge / DURATION);
 
-            if (fixedAge < DURATION)
+            Vector3 jitterOffset = UnityEngine.Random.insideUnitSphere * _jitterStrength;
+            jitterOffset.y *= 0.2f;
+            jitterOffset *= 1f - Mathf.Pow(fraction, 2f);
+            
+            if (transform)
             {
-                float fraction = fixedAge / DURATION;
-
-                Vector3 randomOffset = UnityEngine.Random.insideUnitSphere * _jitterStrength;
-                randomOffset.y *= 0.2f;
-
-                transform.position = Vector3.Lerp(_startPosition, TargetPosition, fraction) + Vector3.Lerp(randomOffset, Vector3.zero, fraction);
+                transform.position = Vector3.Lerp(_startPosition, TargetPosition, fraction) + jitterOffset;
                 transform.rotation = Quaternion.Slerp(_startRotation, TargetRotation, fraction);
             }
-            else
+
+            if (fixedAge >= DURATION && isAuthority)
             {
                 outer.SetNextStateToMain();
             }
@@ -54,6 +79,11 @@ namespace GooeyArtifacts.EntityStates.MovingInteractables
         public override void OnExit()
         {
             base.OnExit();
+
+            if (transformSyncController)
+            {
+                transformSyncController.EnableClientTransformControl = false;
+            }
 
             if (transform)
             {

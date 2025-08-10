@@ -1,5 +1,6 @@
 ﻿using EntityStates;
 using GooeyArtifacts.Artifacts.MovingInteractables;
+using GooeyArtifacts.Utils;
 using RoR2;
 using RoR2.Navigation;
 using UnityEngine;
@@ -8,11 +9,13 @@ namespace GooeyArtifacts.EntityStates.MovingInteractables
 {
     public class MovingInteractableBaseState : EntityState
     {
-        protected InteractableSpawnCard spawnCard { get; private set; }
+        protected SpawnCard spawnCard { get; private set; }
 
         public new GameObject gameObject { get; private set; }
 
         public new Transform transform { get; private set; }
+
+        protected SyncExternalNetworkedObjectTransform transformSyncController { get; private set; }
 
         protected MapNodeGroup.GraphType nodeGraphType { get; private set; }
         protected HullClassification hullSize { get; private set; }
@@ -26,23 +29,27 @@ namespace GooeyArtifacts.EntityStates.MovingInteractables
 
             spawnCard = moveController.SpawnCardServer;
             gameObject = moveController.InteractableObject;
+            transformSyncController = moveController.TransformSyncController;
 
             if (gameObject)
             {
                 transform = gameObject.transform;
             }
 
-            if (spawnCard)
+            if (isAuthority)
             {
-                nodeGraphType = spawnCard.nodeGraphType;
-                hullSize = spawnCard.hullSize;
-                occupyPosition = spawnCard.occupyPosition;
-            }
-            else
-            {
-                nodeGraphType = MapNodeGroup.GraphType.Ground;
-                hullSize = HullClassification.Human;
-                occupyPosition = true;
+                if (spawnCard)
+                {
+                    nodeGraphType = spawnCard.nodeGraphType;
+                    hullSize = spawnCard.hullSize;
+                    occupyPosition = spawnCard.occupyPosition;
+                }
+                else
+                {
+                    nodeGraphType = MapNodeGroup.GraphType.Ground;
+                    hullSize = HullClassification.Human;
+                    occupyPosition = true;
+                }
             }
         }
 
@@ -50,7 +57,7 @@ namespace GooeyArtifacts.EntityStates.MovingInteractables
         {
             base.FixedUpdate();
 
-            if (!transform || !gameObject)
+            if ((!transform || !gameObject) && isAuthority)
             {
                 outer.SetNextStateToMain();
             }

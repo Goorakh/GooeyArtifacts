@@ -10,39 +10,54 @@ namespace GooeyArtifacts.Utils
         int _lastWaypointIndex;
         float _currentWaypointDistanceTravelled;
 
-        public PathTraveller(Path path)
+        readonly PathLinkData[] _pathLinks = [];
+
+        public PathTraveller(Path path, GameObject travellingEntity)
         {
             Path = path;
+
+            if (Path.waypointsCount > 0)
+            {
+                _pathLinks = new PathLinkData[Path.waypointsCount - 1];
+
+                PathNode endNode = new PathNode(Path, Path[Path.waypointsCount - 1], travellingEntity);
+
+                float totalPathDistance = 0f;
+                for (int i = Path.waypointsCount - 2; i >= 0; i--)
+                {
+                    PathNode current = new PathNode(Path, Path[i], travellingEntity);
+
+                    PathLinkData link = new PathLinkData(current, endNode, totalPathDistance);
+                    _pathLinks[i] = link;
+
+                    totalPathDistance += link.TotalDistance;
+
+                    endNode = current;
+                }
+            }
         }
 
-        // TODO: Learn math (follow jump arcs for jump nodes instead of just interpolating like normal)
         public TravelData AdvancePosition(float moveDelta)
         {
             _currentWaypointDistanceTravelled += moveDelta;
 
             for (; _lastWaypointIndex < Path.waypointsCount - 1; _lastWaypointIndex++)
             {
-                WaypointTraversalData waypointData = new WaypointTraversalData(Path, _lastWaypointIndex);
+                PathLinkData linkData = _pathLinks[_lastWaypointIndex];
 
-                if (_currentWaypointDistanceTravelled >= waypointData.TotalDistance)
+                if (_currentWaypointDistanceTravelled >= linkData.TotalDistance)
                 {
-                    _currentWaypointDistanceTravelled -= waypointData.TotalDistance;
+                    _currentWaypointDistanceTravelled -= linkData.TotalDistance;
                     continue;
                 }
 
-                float totalDistanceRemaining = waypointData.TotalDistance - _currentWaypointDistanceTravelled;
-                for (int i = _lastWaypointIndex + 2; i < Path.waypointsCount; i++)
-                {
-                    WaypointTraversalData traversalData = new WaypointTraversalData(Path, i - 1);
-                    totalDistanceRemaining += traversalData.TotalDistance;
-                }
+                float travelFraction = Mathf.Clamp01(_currentWaypointDistanceTravelled / linkData.TotalDistance);
 
-                float travelFraction = Mathf.Clamp01(_currentWaypointDistanceTravelled / waypointData.TotalDistance);
-
-                return new TravelData(Path, waypointData.Start, waypointData.End, travelFraction, totalDistanceRemaining, false);
+                return new TravelData(Path, linkData.Start, linkData.End, travelFraction, linkData.RemainingTotalDistance - _currentWaypointDistanceTravelled, false);
             }
 
-            return new TravelData(Path, Path[Path.waypointsCount - 2], Path[Path.waypointsCount - 1], 1f, 0f, true);
+            PathLinkData lastLink = _pathLinks[^1];
+            return new TravelData(Path, lastLink.Start, lastLink.End, 1f, 0f, true);
         }
 
         public readonly struct TravelData
@@ -56,19 +71,13 @@ namespace GooeyArtifacts.Utils
 
             public readonly bool IsAtEnd;
 
-            public TravelData(Path path, Path.Waypoint start, Path.Waypoint end, float travelFraction, float remainingTotalDistance, bool isAtEnd)
+            public TravelData(Path path, PathNode start, PathNode end, float travelFraction, float remainingTotalDistance, bool isAtEnd)
             {
-                path.nodeGraph.GetNodePosition(start.nodeIndex, out Vector3 startPosition);
-                path.nodeGraph.GetNodePosition(end.nodeIndex, out Vector3 endPosition);
+                CurrentPosition = Vector3.Lerp(start.Position, end.Position, travelFraction);
 
-                CurrentPosition = Vector3.Lerp(startPosition, endPosition, travelFraction);
+                Direction = (end.Position - start.Position).normalized;
 
-                Direction = (endPosition - startPosition).normalized;
-
-                Vector3 startNormal = WorldUtils.GetEnvironmentNormalAtPoint(startPosition);
-                Vector3 endNormal = WorldUtils.GetEnvironmentNormalAtPoint(endPosition);
-
-                InterpolatedNormal = Quaternion.Slerp(Util.QuaternionSafeLookRotation(startNormal), Util.QuaternionSafeLookRotation(endNormal), travelFraction) * Vector3.forward;
+                InterpolatedNormal = Quaternion.Slerp(Util.QuaternionSafeLookRotation(start.Normal), Util.QuaternionSafeLookRotation(end.Normal), travelFraction) * Vector3.forward;
 
                 RemainingTotalDistance = remainingTotalDistance;
 
@@ -76,25 +85,45 @@ namespace GooeyArtifacts.Utils
             }
         }
 
-        readonly struct WaypointTraversalData
+        public readonly struct PathNode
         {
-            public readonly Path.Waypoint Start;
-            public readonly Path.Waypoint End;
+            public readonly Vector3 Position;
+            public readonly Vector3 Normal;
 
-            public readonly Vector3 StartPosition;
-            public readonly Vector3 EndPosition;
+            public readonly float MinJumpHeight;
+
+            public PathNode(Path path, Path.Waypoint waypoint, GameObject entity)
+            {
+                MinJumpHeight = waypoint.minJumpHeight;
+
+                if (!path.nodeGraph.GetNodePosition(waypoint.nodeIndex, out Position))
+                {
+                    Log.Error("Failed to find node position");
+                }
+                else
+                {
+                    Normal = WorldUtils.GetEnvironmentNormalAtPoint(Position, entity);
+                }
+            }
+        }
+
+        readonly struct PathLinkData
+        {
+            public readonly PathNode Start;
+            public readonly PathNode End;
 
             public readonly float TotalDistance;
 
-            public WaypointTraversalData(Path path, int startIndex)
+            public readonly float RemainingTotalDistance;
+
+            public PathLinkData(PathNode start, PathNode end, float remainingTotalDistance)
             {
-                Start = path[startIndex];
-                path.nodeGraph.GetNodePosition(Start.nodeIndex, out StartPosition);
+                Start = start;
+                End = end;
 
-                End = path[startIndex + 1];
-                path.nodeGraph.GetNodePosition(End.nodeIndex, out EndPosition);
+                TotalDistance = (End.Position - Start.Position).magnitude;
 
-                TotalDistance = (EndPosition - StartPosition).magnitude;
+                RemainingTotalDistance = remainingTotalDistance + TotalDistance;
             }
         }
     }

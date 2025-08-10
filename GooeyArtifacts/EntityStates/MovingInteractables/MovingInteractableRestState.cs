@@ -21,39 +21,44 @@ namespace GooeyArtifacts.EntityStates.MovingInteractables
             _fallbackPositionHelperCard.forbiddenFlags = NodeFlags.NoChestSpawn;
         }
 
+        const float MaxNodeSearchDistance = 100f;
+
         float _waitDuration;
 
         SpawnCard _nextPositionSelectorSpawnCard;
         bool _positionSelectorIsTemporary;
 
-        float _startingMaxSearchDistance = 50f;
+        float _searchDistance = 50f;
 
         public override void OnEnter()
         {
             base.OnEnter();
 
-            _waitDuration = UnityEngine.Random.Range(2.5f, 7.5f);
-
-            if (spawnCard)
+            if (isAuthority)
             {
-                _waitDuration *= Util.Remap(spawnCard.directorCreditCost, 0f, 50f, 0.75f, 2f);
+                _waitDuration = UnityEngine.Random.Range(2.5f, 7.5f);
 
-                _nextPositionSelectorSpawnCard = ScriptableObject.CreateInstance<SpawnCard>();
-                _nextPositionSelectorSpawnCard.prefab = LegacyResourcesAPI.Load<GameObject>("SpawnCards/HelperPrefab");
-                _nextPositionSelectorSpawnCard.sendOverNetwork = false;
-                _nextPositionSelectorSpawnCard.name = "scPositionHelper_" + spawnCard.name;
-                _nextPositionSelectorSpawnCard.hullSize = spawnCard.hullSize;
-                _nextPositionSelectorSpawnCard.nodeGraphType = spawnCard.nodeGraphType;
-                _nextPositionSelectorSpawnCard.requiredFlags = spawnCard.requiredFlags;
-                _nextPositionSelectorSpawnCard.forbiddenFlags = spawnCard.forbiddenFlags;
+                if (spawnCard)
+                {
+                    _waitDuration *= Util.Remap(spawnCard.directorCreditCost, 0f, 50f, 0.75f, 2f);
 
-                _positionSelectorIsTemporary = true;
-            }
-            else
-            {
-                _nextPositionSelectorSpawnCard = _fallbackPositionHelperCard;
+                    _nextPositionSelectorSpawnCard = ScriptableObject.CreateInstance<SpawnCard>();
+                    _nextPositionSelectorSpawnCard.prefab = LegacyResourcesAPI.Load<GameObject>("SpawnCards/HelperPrefab");
+                    _nextPositionSelectorSpawnCard.sendOverNetwork = false;
+                    _nextPositionSelectorSpawnCard.name = "scPositionHelper_" + spawnCard.name;
+                    _nextPositionSelectorSpawnCard.hullSize = spawnCard.hullSize;
+                    _nextPositionSelectorSpawnCard.nodeGraphType = spawnCard.nodeGraphType;
+                    _nextPositionSelectorSpawnCard.requiredFlags = spawnCard.requiredFlags;
+                    _nextPositionSelectorSpawnCard.forbiddenFlags = spawnCard.forbiddenFlags;
 
-                _positionSelectorIsTemporary = false;
+                    _positionSelectorIsTemporary = true;
+                }
+                else
+                {
+                    _nextPositionSelectorSpawnCard = _fallbackPositionHelperCard;
+
+                    _positionSelectorIsTemporary = false;
+                }
             }
         }
 
@@ -74,43 +79,29 @@ namespace GooeyArtifacts.EntityStates.MovingInteractables
             if (!transform)
                 return;
 
-            if (fixedAge >= _waitDuration)
+            if (isAuthority && fixedAge >= _waitDuration)
             {
-                SceneInfo sceneInfo = SceneInfo.instance;
-                if (sceneInfo)
+                Vector3? targetPosition = tryFindNextTargetPosition();
+                if (targetPosition.HasValue)
                 {
-                    NodeGraph nodeGraph = sceneInfo.GetNodeGraph(_nextPositionSelectorSpawnCard.nodeGraphType);
-                    if (nodeGraph)
+                    outer.SetNextState(new MovingInteractableMoveToTargetState
                     {
-                        NodeGraph.NodeIndex startNode = nodeGraph.FindClosestNode(transform.position, _nextPositionSelectorSpawnCard.hullSize, 50f);
-                        if (startNode != NodeGraph.NodeIndex.invalid)
-                        {
-                            Vector3? targetPosition = tryFindNextTargetPosition();
-                            if (targetPosition.HasValue)
-                            {
-                                outer.SetNextState(new MovingInteractableMoveToTargetState
-                                {
-                                    Destination = targetPosition.Value
-                                });
-
-                                return;
-                            }
-                            else
-                            {
-                                outer.SetNextState(new MovingInteractableRestState
-                                {
-                                    _startingMaxSearchDistance = _startingMaxSearchDistance + 25f
-                                });
-
-                                return;
-                            }
-                        }
-                    }
+                        Destination = targetPosition.Value
+                    });
                 }
+                else if (_searchDistance < MaxNodeSearchDistance)
+                {
+                    outer.SetNextState(new MovingInteractableRestState
+                    {
+                        _searchDistance = Mathf.Min(MaxNodeSearchDistance, _searchDistance + 25f)
+                    });
+                }
+                else
+                {
+                    Log.Debug($"{gameObject}: no valid target position found, resetting state");
 
-                Log.Debug($"{gameObject}: no valid target position found, resetting state");
-
-                outer.SetNextStateToMain();
+                    outer.SetNextStateToMain();
+                }
             }
         }
 
@@ -125,7 +116,7 @@ namespace GooeyArtifacts.EntityStates.MovingInteractables
                 position = transform.position,
                 placementMode = DirectorPlacementRule.PlacementMode.Approximate,
                 minDistance = 20f,
-                maxDistance = _startingMaxSearchDistance + (Mathf.Pow(UnityEngine.Random.value, 2.25f) * 150f)
+                maxDistance = _searchDistance * (1f + (2f * Mathf.Pow(UnityEngine.Random.value, 5f)))
             };
 
             DirectorSpawnRequest spawnRequest = new DirectorSpawnRequest(_nextPositionSelectorSpawnCard, placementRule, RoR2Application.rng);

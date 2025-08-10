@@ -1,8 +1,8 @@
-﻿using RoR2;
+﻿using GooeyArtifacts.Utils;
+using HG;
+using RoR2;
 using System;
 using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 using UnityEngine.Networking;
@@ -11,7 +11,13 @@ namespace GooeyArtifacts.Artifacts.MovingInteractables
 {
     public static class MovingInteractablesArtifactManager
     {
-        static readonly InteractableSpawnCard[] _spawnCardBlacklist = [
+        static readonly SpawnCard[] _nonInteractableSpawnCardWhitelist = [
+            Addressables.LoadAssetAsync<SpawnCard>(RoR2BepInExPack.GameAssetPathsBetter.RoR2_DLC2.scHalcyonShardA_asset).WaitForCompletion(),
+            Addressables.LoadAssetAsync<SpawnCard>(RoR2BepInExPack.GameAssetPathsBetter.RoR2_DLC2.scHalcyonShardB_asset).WaitForCompletion(),
+            Addressables.LoadAssetAsync<SpawnCard>(RoR2BepInExPack.GameAssetPathsBetter.RoR2_DLC2.scHalcyonShardC_asset).WaitForCompletion(),
+        ];
+
+        static readonly SpawnCard[] _spawnCardBlacklist = [
             Addressables.LoadAssetAsync<InteractableSpawnCard>("RoR2/DLC1/GameModes/InfiniteTowerRun/InfiniteTowerAssets/iscInfiniteTowerSafeWard.asset").WaitForCompletion(),
             Addressables.LoadAssetAsync<InteractableSpawnCard>("RoR2/DLC1/GameModes/InfiniteTowerRun/InfiniteTowerAssets/iscInfiniteTowerSafeWardAwaitingInteraction.asset").WaitForCompletion()
         ];
@@ -25,6 +31,17 @@ namespace GooeyArtifacts.Artifacts.MovingInteractables
 
             RunArtifactManager.onArtifactEnabledGlobal += onArtifactEnabledGlobal;
             RunArtifactManager.onArtifactDisabledGlobal += onArtifactDisabledGlobal;
+
+            void addMovableComponentToPrefab(string assetGuid)
+            {
+                AssetLoadUtils.LoadAssetTemporary<GameObject>(assetGuid, prefab =>
+                {
+                    prefab.EnsureComponent<MovableInteractable>();
+                });
+            }
+
+            addMovableComponentToPrefab(RoR2BepInExPack.GameAssetPathsBetter.RoR2_DLC1_VoidSurvivor.VoidSurvivorPod_prefab);
+            addMovableComponentToPrefab(RoR2BepInExPack.GameAssetPathsBetter.RoR2_Base_SurvivorPod.SurvivorPod_prefab);
         }
 
         static void SpawnCard_onSpawnedServerGlobal(SpawnCard.SpawnResult spawnResult)
@@ -32,11 +49,15 @@ namespace GooeyArtifacts.Artifacts.MovingInteractables
             if (!NetworkServer.active || !spawnResult.success)
                 return;
 
-            if (spawnResult.spawnRequest is null || spawnResult.spawnRequest.spawnCard is not InteractableSpawnCard spawnCard)
+            if (spawnResult.spawnRequest is null)
                 return;
 
-            if (Array.IndexOf(_spawnCardBlacklist, spawnCard) != -1)
+            SpawnCard spawnCard = spawnResult.spawnRequest.spawnCard;
+            if ((spawnCard is not InteractableSpawnCard && Array.IndexOf(_nonInteractableSpawnCardWhitelist, spawnCard) == -1) ||
+                Array.IndexOf(_spawnCardBlacklist, spawnCard) != -1)
+            {
                 return;
+            }
 
             if (!spawnResult.spawnedInstance.GetComponent<NetworkIdentity>())
             {
@@ -52,61 +73,28 @@ namespace GooeyArtifacts.Artifacts.MovingInteractables
         {
             IEnumerator waitForSceneLoadThenInitSceneMovables()
             {
-                yield return new WaitForFixedUpdate();
-                yield return new WaitForFixedUpdate();
+                yield return new WaitForEndOfFrame();
 
-                List<GameObject> movableSceneObjects = [
-                    .. GameObject.FindObjectsOfType<PortalStatueBehavior>()
-                                 .Where(p => p.portalType == PortalStatueBehavior.PortalType.Shop)
-                                 .Select(c => c.gameObject)
+                // pillars?
+                // eggs
+
+                MonoBehaviour[] movableSceneObjectComponents = [
+                    .. InstanceTracker.GetInstancesList<PurchaseInteraction>(),
+                    .. InstanceTracker.GetInstancesList<TimedChestController>(),
+                    .. InstanceTracker.GetInstancesList<GeodeController>(),
+                    .. InstanceTracker.GetInstancesList<SceneExitController>(),
                 ];
 
-                void addObjectsWithComponent<TComponent>(string holderPath) where TComponent : Component
+                foreach (MonoBehaviour component in movableSceneObjectComponents)
                 {
-                    GameObject holder = GameObject.Find(holderPath);
-                    if (!holder)
-                        return;
+                    GameObject sceneObject = component ? component.gameObject : null;
+                    if (!sceneObject)
+                        continue;
 
-                    movableSceneObjects.AddRange(holder.GetComponentsInChildren<TComponent>().Select(c => c.gameObject));
-                }
+                    if (!sceneObject.TryGetComponent(out NetworkIdentity networkIdentity) || networkIdentity.sceneId.IsEmpty())
+                        continue;
 
-                switch (scene.cachedName)
-                {
-                    case "frozenwall":
-                        addObjectsWithComponent<PurchaseInteraction>("PERMUTATION: Human Fan");
-
-                        addObjectsWithComponent<TimedChestController>("HOLDER: Timed Chests");
-
-                        break;
-                    case "dampcavesimple":
-                        GameObject goldChest = GameObject.Find("HOLDER: Newt Statues and Preplaced Chests/GoldChest");
-                        if (goldChest)
-                        {
-                            movableSceneObjects.Add(goldChest);
-                        }
-
-                        break;
-                    case "goldshores":
-                        addObjectsWithComponent<ChestBehavior>("HOLDER: Preplaced Goodies");
-
-                        break;
-                    case "moon2":
-                        addObjectsWithComponent<HoldoutZoneController>("HOLDER: Pillars");
-
-                        addObjectsWithComponent<ChestBehavior>("HOLDER: Gameplay Space/HOLDER: STATIC MESH/Quadrant 3: Greenhouse/Q3_OuterRing/Island Q3:Greenhouse/Greenhouse/Bud Holder");
-
-                        addObjectsWithComponent<ShopTerminalBehavior>("HOLDER: Gameplay Space/HOLDER: STATIC MESH/Quadrant 2: Workshop/Q2_OuterRing/Island Q2: WorkshopInteriors/Cauldrons");
-
-                        break;
-                    case "rootjungle":
-                        addObjectsWithComponent<ChestBehavior>("HOLDER: Randomization/GROUP: Large Treasure Chests");
-
-                        break;
-                }
-
-                foreach (GameObject sceneObject in movableSceneObjects)
-                {
-                    if (!sceneObject || !sceneObject.activeSelf)
+                    if (sceneObject.GetComponent<MeridianEventTriggerInteraction>())
                         continue;
 
                     if (sceneObject.GetComponent<MovableInteractable>())
@@ -146,6 +134,11 @@ namespace GooeyArtifacts.Artifacts.MovingInteractables
                 return;
 
             MovableInteractable.OnMovableInteractableCreated -= setupMovingInteractable;
+
+            foreach (MovableInteractable movable in InstanceTracker.GetInstancesList<MovableInteractable>())
+            {
+                cleanupMovingInteractable(movable);
+            }
         }
 
         static void setupMovingInteractable(MovableInteractable movable)
@@ -162,13 +155,47 @@ namespace GooeyArtifacts.Artifacts.MovingInteractables
                 return;
             }
 
-            GameObject moveControllerObject = GameObject.Instantiate(Prefabs.InteractableMoveControllerPrefab);
+            if (NetworkServer.active)
+            {
+                if (movable.MoveController)
+                {
+                    movable.MoveController.UnmarkForCleanup();
+                }
+                else
+                {
+                    GameObject syncNetObjectTransformObj = GameObject.Instantiate(Prefabs.SyncExternalNetObjectTransformPrefab);
 
-            InteractableMoveController moveController = moveControllerObject.GetComponent<InteractableMoveController>();
-            moveController.SpawnCardServer = movable.SpawnCard;
-            moveController.InteractableObject = movable.gameObject;
+                    SyncExternalNetworkedObjectTransform interactableTransformSyncController = syncNetObjectTransformObj.GetComponent<SyncExternalNetworkedObjectTransform>();
+                    interactableTransformSyncController.TargetObject = movable.gameObject;
+
+                    NetworkServer.Spawn(syncNetObjectTransformObj);
+
+                    GameObject moveControllerObject = GameObject.Instantiate(Prefabs.InteractableMoveControllerPrefab);
+
+                    InteractableMoveController moveController = moveControllerObject.GetComponent<InteractableMoveController>();
+                    moveController.SpawnCardServer = movable.SpawnCard;
+                    moveController.TransformSyncController = interactableTransformSyncController;
+
+                    NetworkServer.Spawn(moveControllerObject);
+
+                    movable.MoveController = moveController;
+                }
+            }
 
             movable.IsClaimed = true;
+        }
+
+        static void cleanupMovingInteractable(MovableInteractable movableInteractable)
+        {
+            if (!movableInteractable.IsClaimed)
+                return;
+
+            if (movableInteractable.MoveController)
+            {
+                movableInteractable.MoveController.MarkForCleanup();
+            }
+
+            movableInteractable.IsClaimed = false;
         }
     }
 }

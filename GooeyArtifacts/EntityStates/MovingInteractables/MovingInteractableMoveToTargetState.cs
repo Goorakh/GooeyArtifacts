@@ -1,23 +1,27 @@
 ﻿using GooeyArtifacts.Utils;
+using GooeyArtifacts.Utils.Extensions;
 using RoR2;
 using RoR2.ConVar;
 using RoR2.Navigation;
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Networking;
 
 namespace GooeyArtifacts.EntityStates.MovingInteractables
 {
     [EntityStateType]
     public class MovingInteractableMoveToTargetState : MovingInteractableBaseState
     {
-        static readonly BoolConVar _cvDrawPathData = new BoolConVar("goo_draw_interactable_paths", ConVarFlags.None, "0", "");
+        static readonly BoolConVar _cvDrawPathData = new BoolConVar("goo_draw_interactable_paths", ConVarFlags.SenderMustBeServer, "0", "");
 
         public Vector3 Destination;
 
-        Quaternion _startRotation;
+        Vector3 _startPosition;
+        Quaternion _startRotation = Quaternion.identity;
 
         float _moveSpeed = 10f;
+        float _rotationSpeed = 135;
 
         float _stepHeight = 2f;
         float _maxStepRotation = 35f;
@@ -25,12 +29,13 @@ namespace GooeyArtifacts.EntityStates.MovingInteractables
         Path _path;
         PathTraveller _pathTraveller;
 
-        Vector3 _currentPosition;
-        Quaternion _currentRotation;
+        float _totalPathDistance;
+
+        float _estimatedTimeRemaining;
 
         Vector3 _targetPosition;
         Vector3 _directTargetPosition;
-        Quaternion _targetRotation;
+        Quaternion _targetRotation = Quaternion.identity;
 
         bool _targetAtEnd;
 
@@ -45,42 +50,71 @@ namespace GooeyArtifacts.EntityStates.MovingInteractables
         {
             base.OnEnter();
 
+            _startPosition = transform.position;
             _startRotation = transform.rotation;
 
-            if (spawnCard)
+            if (isAuthority)
             {
-                _moveSpeed = Mathf.Max(5f, Util.Remap(spawnCard.directorCreditCost, 0f, 50f, 10f, 7.5f));
-            }
-            else
-            {
-                _moveSpeed = 10f;
-            }
-
-            if (Util.GuessRenderBoundsMeshOnly(gameObject, out Bounds prefabBounds))
-            {
-                Vector3 size = prefabBounds.size;
-
-                float maxWidth = Mathf.Max(size.x, size.z);
-                float height = size.y;
-
-                float sizeCoefficient;
-                if (maxWidth > height)
+                if (spawnCard)
                 {
-                    sizeCoefficient = height / maxWidth;
+                    _moveSpeed = Mathf.Max(5f, Util.Remap(spawnCard.directorCreditCost, 0f, 50f, 10f, 7.5f));
                 }
                 else
                 {
-                    sizeCoefficient = Mathf.Sqrt(maxWidth / height);
+                    _moveSpeed = 10f;
                 }
 
-                _moveSpeed *= sizeCoefficient;
-                _maxStepRotation *= sizeCoefficient;
-            }
+                if (Util.GuessRenderBoundsMeshOnly(gameObject, out Bounds prefabBounds))
+                {
+                    Vector3 size = prefabBounds.size;
 
-            if (!tryInitializePath())
-            {
-                outer.SetNextStateToMain();
+                    float maxWidth = Mathf.Max(size.x, size.z);
+                    float height = size.y;
+
+                    float sizeCoefficient;
+                    if (maxWidth > height)
+                    {
+                        sizeCoefficient = height / maxWidth;
+                    }
+                    else
+                    {
+                        sizeCoefficient = Mathf.Sqrt(maxWidth / height);
+                    }
+
+                    _moveSpeed *= sizeCoefficient;
+                    _maxStepRotation *= sizeCoefficient;
+                }
+
+                _rotationSpeed = Mathf.Clamp(Util.Remap(_moveSpeed, 0f, 10f, 30f, 135f), 30f, 180f);
+
+                if (tryInitializePath())
+                {
+                    _totalPathDistance = _pathTraveller.Path.CalculateTotalDistance();
+                }
+                else
+                {
+                    Log.Debug($"{Util.GetGameObjectHierarchyName(gameObject)} failed to initialize path to target position, resetting state");
+                    outer.SetNextStateToMain();
+                }
             }
+        }
+
+        public override void OnSerialize(NetworkWriter writer)
+        {
+            base.OnSerialize(writer);
+
+            writer.Write(_moveSpeed);
+            writer.Write(_totalPathDistance);
+            writer.Write(_maxStepRotation);
+        }
+
+        public override void OnDeserialize(NetworkReader reader)
+        {
+            base.OnDeserialize(reader);
+
+            _moveSpeed = reader.ReadSingle();
+            _totalPathDistance = reader.ReadSingle();
+            _maxStepRotation = reader.ReadSingle();
         }
 
         bool tryInitializePath()
@@ -93,23 +127,27 @@ namespace GooeyArtifacts.EntityStates.MovingInteractables
             if (!nodeGraph)
                 return false;
 
-            _path = new Path(nodeGraph);
-
             NodeGraph.PathRequest pathRequest = new NodeGraph.PathRequest
             {
                 startPos = transform.position,
                 endPos = Destination,
                 hullClassification = hullSize,
                 maxJumpHeight = float.PositiveInfinity,
-                maxSpeed = float.PositiveInfinity,
-                path = _path
+                maxSpeed = _moveSpeed,
+                path = new Path(nodeGraph)
             };
 
             PathTask pathTask = nodeGraph.ComputePath(pathRequest);
             if (!pathTask.wasReachable || pathTask.status != PathTask.TaskStatus.Complete)
                 return false;
 
-            _pathTraveller = new PathTraveller(_path);
+            Path path = pathTask.path;
+            path.RemoveDuplicateWaypoints();
+            if (path.waypointsCount < 1)
+                return false;
+
+            _path = path;
+            _pathTraveller = new PathTraveller(_path, gameObject);
 
             // TODO: Account for RoR2.OccupyNearbyNodes component
             if (occupyPosition)
@@ -129,9 +167,6 @@ namespace GooeyArtifacts.EntityStates.MovingInteractables
                 }
             }
 
-            _currentPosition = transform.position;
-            _currentRotation = transform.rotation;
-
             return true;
         }
 
@@ -139,12 +174,41 @@ namespace GooeyArtifacts.EntityStates.MovingInteractables
         {
             base.FixedUpdate();
 
-            if (!transform || _pathTraveller is null)
+            if (!gameObject || !transform)
                 return;
 
-            setVisualizersActive(_cvDrawPathData.value);
+            if (isAuthority)
+            {
+                fixedUpdateAuthority();
+            }
+            else
+            {
+                _estimatedTimeRemaining = Mathf.Max(0f, (_totalPathDistance / _moveSpeed) - fixedAge);
+            }
 
-            float estimatedTimeRemaining;
+            float stepMagnitude = Mathf.Sqrt(Mathf.Min(1f, fixedAge)
+                                             * Mathf.Clamp01(Util.Remap(_estimatedTimeRemaining, 0f, 2.5f, 0f, 1f)));
+
+            float stepValue = 4f * Mathf.PI * fixedAge;
+
+            if (transformSyncController)
+            {
+                Quaternion currentRotation = transform.rotation * Quaternion.Inverse(transformSyncController.RotationOffset);
+
+                transformSyncController.PositionOffset = currentRotation * new Vector3(0f, Mathf.Abs(Mathf.Sin(stepValue)) * _stepHeight * stepMagnitude, 0f);
+                transformSyncController.RotationOffset = Quaternion.AngleAxis(Mathf.Sin(stepValue + (Mathf.PI / 2f)) * _maxStepRotation * stepMagnitude, Vector3.forward);
+            }
+        }
+
+        void fixedUpdateAuthority()
+        {
+            if (_path == null || _pathTraveller == null)
+            {
+                outer.SetNextStateToMain();
+                return;
+            }
+
+            setVisualizersActive(_cvDrawPathData.value);
 
             float moveDelta = _moveSpeed * Time.fixedDeltaTime;
             if (!_targetAtEnd)
@@ -156,47 +220,74 @@ namespace GooeyArtifacts.EntityStates.MovingInteractables
                 Vector3 groundPosition = _directTargetPosition;
                 Vector3 groundNormal = travelData.InterpolatedNormal;
 
-                if (tryFindProperGroundPosition(travelData.CurrentPosition, -travelData.InterpolatedNormal, out Vector3 properGroundNormal, out Vector3 properGroundPosition))
+                if (tryFindProperGroundPosition(groundPosition, -travelData.InterpolatedNormal, out Vector3 properGroundNormal, out Vector3 properGroundPosition))
                 {
                     groundPosition = properGroundPosition;
                     groundNormal = properGroundNormal;
                 }
 
+                if (travelData.Direction.sqrMagnitude > Mathf.Epsilon)
+                {
+                    _targetRotation = Util.QuaternionSafeLookRotation(travelData.Direction, groundNormal);
+                }
+
                 _targetPosition = groundPosition;
                 _targetAtEnd = travelData.IsAtEnd;
-                _targetRotation = Util.QuaternionSafeLookRotation(travelData.Direction, groundNormal);
 
-                estimatedTimeRemaining = travelData.RemainingTotalDistance / _moveSpeed;
+                _estimatedTimeRemaining = travelData.RemainingTotalDistance / _moveSpeed;
             }
             else
             {
-                estimatedTimeRemaining = 0f;
+                _estimatedTimeRemaining = 0f;
             }
+
+            Vector3 position = transform.position;
+            Quaternion rotation = transform.rotation;
+            if (transformSyncController)
+            {
+                position -= transformSyncController.PositionOffset;
+                rotation *= Quaternion.Inverse(transformSyncController.RotationOffset);
+            }
+
+            float positionSmoothSpeed = _moveSpeed;
+
+            // Add speed to catch up if far away
+            positionSmoothSpeed += Mathf.Clamp((_targetPosition - position).sqrMagnitude / (5f * 5f), 1f, 5f);
+
+            // Add speed when close to end
+            positionSmoothSpeed += Mathf.Max(0f, Util.Remap(_estimatedTimeRemaining, 0f, 1f, 5f, 0f));
+
+            position = Vector3.MoveTowards(position, _targetPosition, positionSmoothSpeed * Time.fixedDeltaTime);
+            rotation = Quaternion.RotateTowards(rotation, _targetRotation, _rotationSpeed * Time.fixedDeltaTime);
 
             _currentTargetPositionVisualizer?.transform.SetPositionAndRotation(_targetPosition, _targetRotation);
 
-            float stepMagnitude = Mathf.Sqrt(Mathf.Min(1f, Util.Remap(fixedAge, 0f, 1f, 0f, 1f))
-                                             * Mathf.Clamp01(Util.Remap(estimatedTimeRemaining, 0f, 2.5f, 0f, 1f)));
+            _currentPositionVisualizer?.transform.SetPositionAndRotation(position, rotation);
 
-            float stepValue = 4f * Mathf.PI * fixedAge;
-
-            _currentPosition = Vector3.MoveTowards(_currentPosition, _targetPosition, moveDelta + (1f * Time.fixedDeltaTime));
-            _currentRotation = Quaternion.RotateTowards(_currentRotation, _targetRotation, 135f * Time.fixedDeltaTime);
-
-            _currentPositionVisualizer?.transform.SetPositionAndRotation(_currentPosition, _currentRotation);
-
-            transform.position = _currentPosition + (_currentRotation * new Vector3(0f, Mathf.Abs(Mathf.Sin(stepValue)) * _stepHeight * stepMagnitude, 0f));
-            transform.rotation = Quaternion.AngleAxis(Mathf.Sin(stepValue + (Mathf.PI / 2f)) * _maxStepRotation * stepMagnitude, _currentRotation * Vector3.forward) * _currentRotation;
-
-            if (_targetAtEnd && _currentPosition == _targetPosition)
+            Vector3 offsetPosition = position;
+            Quaternion offsetRotation = rotation;
+            
+            if (transformSyncController)
             {
-                Vector3 targetEuler = _startRotation.eulerAngles;
-                targetEuler.y = _currentRotation.eulerAngles.y + UnityEngine.Random.Range(-15f, 15f);
+                offsetPosition += transformSyncController.PositionOffset;
+                offsetRotation *= transformSyncController.RotationOffset;
+            }
+
+            transform.position = offsetPosition;
+            transform.rotation = offsetRotation;
+
+            if (_targetAtEnd && (position - _targetPosition).sqrMagnitude <= 0.1f)
+            {
+                Vector3 targetRotationOffset = _startRotation.eulerAngles;
+                targetRotationOffset.y = _targetRotation.eulerAngles.y + UnityEngine.Random.Range(-15f, 15f);
+
+                Quaternion targetRotation = Quaternion.Euler(targetRotationOffset);
+                Vector3 targetPosition = _directTargetPosition;
 
                 outer.SetNextState(new MovingInteractableSettleState
                 {
-                    TargetRotation = Quaternion.Euler(targetEuler),
-                    TargetPosition = _directTargetPosition
+                    TargetRotation = targetRotation,
+                    TargetPosition = targetPosition
                 });
             }
         }
@@ -204,6 +295,12 @@ namespace GooeyArtifacts.EntityStates.MovingInteractables
         public override void OnExit()
         {
             base.OnExit();
+
+            if (transformSyncController)
+            {
+                transformSyncController.PositionOffset = Vector3.zero;
+                transformSyncController.RotationOffset = Quaternion.identity;
+            }
 
             _path?.Dispose();
             _path = null;
@@ -233,75 +330,75 @@ namespace GooeyArtifacts.EntityStates.MovingInteractables
         {
             float radius = HullDef.Find(hullSize).radius;
 
-            bool isValidCollision(Transform otherTransform)
+            RaycastHit closestHit = default;
+            float closestHitSqrDistance = float.PositiveInfinity;
+
+            const float MAX_SEARCH_DISTANCE = 10f;
+
+            int hitCount = HGPhysics.SphereCastAll(out RaycastHit[] hits, position + (-down * MAX_SEARCH_DISTANCE), radius, down, MAX_SEARCH_DISTANCE * 2f, LayerIndex.world.mask, QueryTriggerInteraction.Ignore);
+
+            try
             {
-                if (otherTransform.IsChildOf(transform))
-                    return false;
-
-                EntityLocator entityLocator = otherTransform.GetComponentInParent<EntityLocator>();
-                if (entityLocator && entityLocator.entity && entityLocator.entity.transform.IsChildOf(transform))
-                    return false;
-
-                return true;
-            }
-
-            bool sphereCast(Ray ray, float maxDistance, out RaycastHit hit)
-            {
-                RaycastHit[] hits = Physics.SphereCastAll(ray, radius, maxDistance, LayerIndex.world.mask);
-
-                if (hits.Length == 0)
+                for (int i = 0; i < hitCount; i++)
                 {
-                    hit = default;
-                    return false;
-                }
+                    RaycastHit hitCandidate = hits[i];
 
-                float closestHitDistance = float.PositiveInfinity;
-                RaycastHit closestHit = default;
-
-                foreach (RaycastHit hitCandidate in hits)
-                {
                     // UnityDocs: For colliders that overlap the sphere at the start of the sweep, RaycastHit.normal is set opposite to the direction of the sweep, RaycastHit.distance is set to zero, and the zero vector gets returned in RaycastHit.point
                     if (hitCandidate.distance <= 0f)
                         continue;
 
-                    if (hitCandidate.distance >= closestHitDistance)
+                    // Not using hit.distance here since we don't care about the distance from the ray origin,
+                    // we only care about how far away the hit point is from the *current* position
+                    float hitSqrDistance = (hitCandidate.point - position).sqrMagnitude;
+                    if (hitSqrDistance >= closestHitSqrDistance)
                         continue;
 
-                    if (!isValidCollision(hitCandidate.transform))
+                    if (TransformUtils.IsPartOfEntity(hitCandidate.transform, gameObject))
                         continue;
+
+                    int overlapCount = HGPhysics.OverlapSphere(out Collider[] overlapColliders, hitCandidate.point + (hitCandidate.normal * radius), radius / 2f, LayerIndex.world.mask, QueryTriggerInteraction.Ignore);
+
+                    try
+                    {
+                        bool overlapsWithTerrain = false;
+
+                        for (int j = 0; j < overlapCount; j++)
+                        {
+                            Collider overlapCollider = overlapColliders[j];
+                            if (overlapCollider && !TransformUtils.IsPartOfEntity(overlapCollider.transform, gameObject))
+                            {
+                                overlapsWithTerrain = true;
+                                break;
+                            }
+                        }
+
+                        if (overlapsWithTerrain)
+                            continue;
+                    }
+                    finally
+                    {
+                        HGPhysics.ReturnResults(overlapColliders);
+                    }
 
                     closestHit = hitCandidate;
-                    closestHitDistance = hitCandidate.distance;
+                    closestHitSqrDistance = hitSqrDistance;
                 }
 
-                hit = closestHit;
-                return !float.IsInfinity(closestHitDistance);
-            }
-
-            RaycastHit hit;
-
-            const float SEARCH_INCREMENT = 0.5f;
-
-            for (int i = 1; i <= 50; i++)
-            {
-                if (sphereCast(new Ray(position + (-down * (i * SEARCH_INCREMENT)), down), SEARCH_INCREMENT * 1.05f, out hit))
+                if (float.IsInfinity(closestHitSqrDistance))
                 {
-                    normal = hit.normal;
-                    properPosition = hit.point;
-                    return true;
+                    normal = -down;
+                    properPosition = position;
+                    return false;
                 }
-            }
 
-            if (sphereCast(new Ray(position + (-down * radius), down), radius * 3.5f, out hit))
-            {
-                normal = hit.normal;
-                properPosition = hit.point;
+                normal = closestHit.normal;
+                properPosition = closestHit.point;
                 return true;
             }
-
-            normal = -down;
-            properPosition = position;
-            return false;
+            finally
+            {
+                HGPhysics.ReturnResults(hits);
+            }
         }
 
         void setVisualizersActive(bool active)
@@ -335,17 +432,20 @@ namespace GooeyArtifacts.EntityStates.MovingInteractables
                             return drawer;
                         }
 
-                        Vector3 previousPosition = _currentPosition;
-                        for (int i = 0; i < _path.waypointsCount; i++)
+                        if (_path != null)
                         {
-                            if (nodeGraph.GetNodePosition(_path[i].nodeIndex, out Vector3 position))
+                            Vector3 previousPosition = _startPosition;
+                            for (int i = 0; i < _path.waypointsCount; i++)
                             {
-                                meshBuilder.AddLine(previousPosition, Color.yellow, position, Color.yellow);
-                                previousPosition = position;
+                                if (nodeGraph.GetNodePosition(_path[i].nodeIndex, out Vector3 currentPosition))
+                                {
+                                    meshBuilder.AddLine(previousPosition, Color.yellow, currentPosition, Color.yellow);
+                                    previousPosition = currentPosition;
+                                }
                             }
-                        }
 
-                        _pathDrawers.Add(createOwnerMeshDrawer(meshBuilder));
+                            _pathDrawers.Add(createOwnerMeshDrawer(meshBuilder));
+                        }
 
                         meshBuilder.Clear();
                         meshBuilder.AddLine(Vector3.zero, Color.green, Vector3.up, Color.green);

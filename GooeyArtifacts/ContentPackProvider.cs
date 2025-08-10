@@ -31,7 +31,7 @@ namespace GooeyArtifacts
 
             ItemDefs.AddItemDefsTo(_contentPack.itemDefs);
             ArtifactDefs.AddArtifactDefsTo(_contentPack.artifactDefs);
-            _contentPack.entityStateTypes.Add(EntityStateTypeAttribute.GetAllEntityStateTypes().ToArray());
+            _contentPack.entityStateTypes.Add([.. EntityStateTypeAttribute.GetAllEntityStateTypes()]);
 
             args.ReportProgress(1f);
             yield break;

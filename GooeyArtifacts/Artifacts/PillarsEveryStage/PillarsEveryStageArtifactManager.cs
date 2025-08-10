@@ -140,12 +140,15 @@ namespace GooeyArtifacts.Artifacts.PillarsEveryStage
                 }
             }
 
-            GameObject pillarChargeMissionControllerObject = Object.Instantiate(Prefabs.StagePillarChargeMissionControllerPrefab);
-            _pillarChargeMissionController = pillarChargeMissionControllerObject.GetComponent<StagePillarChargeMissionController>();
-            _pillarChargeMissionController.PillarObjectsServer = createdPillarObjects.ToArray();
-            _pillarChargeMissionController.RequiredPillarCount = REQUIRED_PILLAR_COUNT;
+            if (createdPillarObjects.Count > 0)
+            {
+                GameObject pillarChargeMissionControllerObject = Object.Instantiate(Prefabs.StagePillarChargeMissionControllerPrefab);
+                _pillarChargeMissionController = pillarChargeMissionControllerObject.GetComponent<StagePillarChargeMissionController>();
+                _pillarChargeMissionController.PillarObjectsServer = [.. createdPillarObjects];
+                _pillarChargeMissionController.RequiredPillarCount = REQUIRED_PILLAR_COUNT;
 
-            NetworkServer.Spawn(pillarChargeMissionControllerObject);
+                NetworkServer.Spawn(pillarChargeMissionControllerObject);
+            }
         }
 
         static void destroyPillars()

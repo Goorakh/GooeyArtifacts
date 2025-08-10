@@ -1,3 +1,7 @@
+**?.?.? Changes:**
+
+* Fixed interactables not moving for non-host players when using Artifact of Redecorating in multiplayer.
+
 **1.0.2 Changes:**
 
 * Fixed for SotS Items & Elites patch

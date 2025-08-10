@@ -1,6 +1,7 @@
 ﻿using HG;
 using R2API;
 using RoR2;
+using System;
 
 namespace GooeyArtifacts.Artifacts.PlayerItemCurse
 {
@@ -12,7 +13,7 @@ namespace GooeyArtifacts.Artifacts.PlayerItemCurse
         static PlayerItemCurseArtifactManager()
         {
             _tierCurseWeights = new float[(int)ItemTier.AssignedAtRuntime + 1];
-            ArrayUtils.SetAll(_tierCurseWeights, 1f);
+            Array.Fill(_tierCurseWeights, 1f);
 
             const float TIER_1_WEIGHT = 1f;
             const float TIER_2_WEIGHT = 1.5f;

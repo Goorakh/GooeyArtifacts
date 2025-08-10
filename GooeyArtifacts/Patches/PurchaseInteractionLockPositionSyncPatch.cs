@@ -31,71 +31,47 @@ namespace GooeyArtifacts.Patches
         {
             orig(self, value);
 
-            if (!NetworkServer.active)
-                return;
-
-            if (value)
+            if (NetworkServer.active)
             {
-                LockObjectLocalPositionMaintainer lockPositionMaintainer = self.gameObject.EnsureComponent<LockObjectLocalPositionMaintainer>();
-                lockPositionMaintainer.LockObject = value;
+                ServerLockObjectTracker lockObjectTracker = self.gameObject.EnsureComponent<ServerLockObjectTracker>();
+                lockObjectTracker.SetLockObject(self.lockGameObject);
             }
         }
 
-        class LockObjectLocalPositionMaintainer : MonoBehaviour
+        class ServerLockObjectTracker : MonoBehaviour
         {
-            Matrix4x4 _lockObjectLocalTransform = Matrix4x4.identity;
+            SyncExternalTransformPseudoParent _pseudoParentController;
 
-            SyncExternalNetworkedObjectTransform _lockObjectTransformSyncController;
-            public GameObject LockObject
+            public void SetLockObject(GameObject lockObject)
             {
-                get
-                {
-                    if (!_lockObjectTransformSyncController)
-                        return null;
+                bool hadLockOnObject = _pseudoParentController && _pseudoParentController.TargetObject == lockObject;
+                bool shouldHaveLockOnObject = lockObject;
 
-                    return _lockObjectTransformSyncController.TargetObject;
-                }
-                set
+                if (hadLockOnObject != shouldHaveLockOnObject)
                 {
-                    if (value)
+                    if (shouldHaveLockOnObject)
                     {
-                        Transform lockTransform = value.transform;
-                        _lockObjectLocalTransform = transform.worldToLocalMatrix * Matrix4x4.TRS(lockTransform.position, lockTransform.rotation, Vector3.one);
-
-                        if (!_lockObjectTransformSyncController)
+                        if (!_pseudoParentController)
                         {
-                            GameObject syncNetObjectTransformObj = GameObject.Instantiate(Prefabs.SyncExternalNetObjectTransformPrefab);
-                            _lockObjectTransformSyncController = syncNetObjectTransformObj.GetComponent<SyncExternalNetworkedObjectTransform>();
+                            lockObject.transform.GetPositionAndRotation(out Vector3 lockPosition, out Quaternion lockRotation);
+                            Vector3 lockLocalPosition = transform.InverseTransformPoint(lockPosition);
+                            Quaternion lockLocalRotation = Quaternion.Inverse(transform.rotation) * lockRotation;
 
-                            _lockObjectTransformSyncController.TargetObject = value;
+                            GameObject pseudoParentControllerObj = Instantiate(Prefabs.SyncExternalNetObjectPseudoParentPrefab, lockLocalPosition, lockLocalRotation);
+                            _pseudoParentController = pseudoParentControllerObj.GetComponent<SyncExternalTransformPseudoParent>();
+                            _pseudoParentController.Parent = gameObject;
+                            NetworkServer.Spawn(pseudoParentControllerObj);
+                        }
 
-                            NetworkServer.Spawn(syncNetObjectTransformObj);
-                        }
-                        else
-                        {
-                            _lockObjectTransformSyncController.TargetObject = value;
-                        }
+                        _pseudoParentController.TargetObject = lockObject;
                     }
                     else
                     {
-                        _lockObjectLocalTransform = Matrix4x4.identity;
-
-                        if (_lockObjectTransformSyncController)
+                        if (_pseudoParentController)
                         {
-                            NetworkServer.Destroy(_lockObjectTransformSyncController.gameObject);
-                            _lockObjectTransformSyncController = null;
+                            NetworkServer.Destroy(_pseudoParentController.gameObject);
                         }
                     }
-                }
-            }
-
-            void FixedUpdate()
-            {
-                GameObject lockObject = LockObject;
-                if (lockObject)
-                {
-                    Matrix4x4 lockMatrix = transform.localToWorldMatrix * _lockObjectLocalTransform;
-                    lockObject.transform.SetPositionAndRotation(lockMatrix.GetColumn(3), lockMatrix.rotation);
                 }
             }
         }

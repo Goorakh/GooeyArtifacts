@@ -1,5 +1,6 @@
 ﻿using EntityStates.Missions.Moon;
 using GooeyArtifacts.Patches;
+using GooeyArtifacts.Utils;
 using RoR2;
 using RoR2.UI;
 using System;
@@ -12,6 +13,21 @@ namespace GooeyArtifacts.Artifacts.PillarsEveryStage
 {
     public class StagePillarChargeMissionController : NetworkBehaviour
     {
+        static EffectIndex _teleporterUnlockEffectIndex = EffectIndex.Invalid;
+
+        [SystemInitializer(typeof(EffectCatalog))]
+        static void Init()
+        {
+            AssetLoadUtils.LoadAssetTemporary<GameObject>(RoR2BepInExPack.GameAssetPathsBetter.RoR2_Base_WeeklyRun.TimeCrystalDeath_prefab, timeCrystalDeathPrefab =>
+            {
+                _teleporterUnlockEffectIndex = EffectCatalog.FindEffectIndexFromPrefab(timeCrystalDeathPrefab);
+                if (_teleporterUnlockEffectIndex == EffectIndex.Invalid)
+                {
+                    Log.Error("Failed to find teleporter unlock effect index");
+                }
+            });
+        }
+
         GameObject[] _pillarObjectsServer = [];
         HoldoutZoneController[] _pillarHoldoutZoneControllersServer = [];
         EntityStateMachine[] _pillarStateMachinesServer = [];
@@ -22,22 +38,16 @@ namespace GooeyArtifacts.Artifacts.PillarsEveryStage
             {
                 return _pillarObjectsServer;
             }
+
+            [Server]
             set
             {
-                if (!NetworkServer.active)
-                {
-                    Log.Warning("Called on client");
-                    return;
-                }
-
                 if (enabled)
                 {
                     unsubscribeFromHoldoutZones(_pillarHoldoutZoneControllersServer);
                 }
 
-                value ??= [];
-
-                _pillarObjectsServer = value;
+                _pillarObjectsServer = value ?? [];
                 _pillarHoldoutZoneControllersServer = Array.ConvertAll(_pillarObjectsServer, g => g.GetComponent<HoldoutZoneController>());
                 _pillarStateMachinesServer = Array.ConvertAll(_pillarObjectsServer, g => g.GetComponent<EntityStateMachine>());
 
@@ -57,6 +67,9 @@ namespace GooeyArtifacts.Artifacts.PillarsEveryStage
         public int ChargedPillarCount;
 
         bool _wasTeleporterLocked;
+
+        TeleporterInteraction _lastObservedTeleporterInteraction;
+        ChildLocator _cachedTeleporterModelChildLocator;
 
         void OnEnable()
         {
@@ -169,6 +182,23 @@ namespace GooeyArtifacts.Artifacts.PillarsEveryStage
         void FixedUpdate()
         {
             TeleporterInteraction teleporter = TeleporterInteraction.instance;
+            if (teleporter != _lastObservedTeleporterInteraction)
+            {
+                ChildLocator modelChildLocator = null;
+
+                if (teleporter.TryGetComponent(out ModelLocator teleporterModelLocator))
+                {
+                    Transform modelTransform = teleporterModelLocator.modelTransform;
+                    if (modelTransform && modelTransform.TryGetComponent(out ChildLocator childLocator))
+                    {
+                        modelChildLocator = childLocator;
+                    }
+                }
+
+                _cachedTeleporterModelChildLocator = modelChildLocator;
+                _lastObservedTeleporterInteraction = teleporter;
+            }
+
             if (teleporter)
             {
                 if (NetworkServer.active)
@@ -178,19 +208,18 @@ namespace GooeyArtifacts.Artifacts.PillarsEveryStage
 
                 bool isLocked = teleporter.locked;
 
-                if (teleporter.TryGetComponent(out ModelLocator teleporterModelLocator))
+                if (_cachedTeleporterModelChildLocator)
                 {
-                    Transform modelTransform = teleporterModelLocator.modelTransform;
-                    if (modelTransform && modelTransform.TryGetComponent(out ChildLocator childLocator))
+                    GameObject timeCrystalBeaconBlocker = _cachedTeleporterModelChildLocator.FindChildGameObject("TimeCrystalBeaconBlocker");
+                    if (timeCrystalBeaconBlocker)
                     {
-                        GameObject timeCrystalBeaconBlocker = childLocator.FindChildGameObject("TimeCrystalBeaconBlocker");
-                        if (timeCrystalBeaconBlocker)
-                        {
-                            timeCrystalBeaconBlocker.SetActive(isLocked);
+                        timeCrystalBeaconBlocker.SetActive(isLocked);
 
-                            if (_wasTeleporterLocked && !isLocked)
+                        if (_wasTeleporterLocked && !isLocked)
+                        {
+                            if (_teleporterUnlockEffectIndex != EffectIndex.Invalid)
                             {
-                                EffectManager.SpawnEffect(LegacyResourcesAPI.Load<GameObject>("Prefabs/Effects/TimeCrystalDeath"), new EffectData
+                                EffectManager.SpawnEffect(_teleporterUnlockEffectIndex, new EffectData
                                 {
                                     origin = timeCrystalBeaconBlocker.transform.position
                                 }, false);

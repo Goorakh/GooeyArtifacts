@@ -8,7 +8,9 @@ namespace GooeyArtifacts.Artifacts.MovingInteractables
     {
         public static event Action<MovableInteractable> OnMovableInteractableCreated;
 
-        public InteractableSpawnCard SpawnCard;
+        public SpawnCard SpawnCard;
+
+        public InteractableMoveController MoveController;
 
         public bool IsClaimed;
 
