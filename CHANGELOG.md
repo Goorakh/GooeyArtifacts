@@ -1,4 +1,4 @@
-**?.?.? Changes:**
+**1.1.0 Changes:**
 
 * Fixed interactables not moving for non-host players when using Artifact of Redecorating in multiplayer.
 

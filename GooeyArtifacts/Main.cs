@@ -12,7 +12,7 @@ namespace GooeyArtifacts
         public const string PluginGUID = PluginAuthor + "." + PluginName;
         public const string PluginAuthor = "Gorakh";
         public const string PluginName = "GooeyArtifacts";
-        public const string PluginVersion = "1.0.2";
+        public const string PluginVersion = "1.1.0";
 
         ContentPackProvider _contentPackProvider;
 
