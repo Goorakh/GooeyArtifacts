@@ -32,7 +32,7 @@ namespace GooeyArtifacts.Artifacts.PillarsEveryStage
                 GameObject prefab = Addressables.LoadAssetAsync<GameObject>(addressablePath).WaitForCompletion();
                 string name = prefab.name + "_StagePillar";
 
-                prefab = prefab.InstantiateClone(Main.PluginGUID + "_" + name);
+                prefab = prefab.InstantiateClone(GooeyArtifactsPlugin.PluginGUID + "_" + name);
 
                 CombatDirector combatDirector = prefab.GetComponent<CombatDirector>();
                 combatDirector.monsterCredit = 450f;

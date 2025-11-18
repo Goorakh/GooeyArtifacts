@@ -3,8 +3,7 @@ using UnityEngine;
 
 namespace GooeyArtifacts.Utils
 {
-#if DEBUG
-    public class TemporaryTexture(Texture2D texture, bool isTemporary) : IDisposable
+    public sealed class TemporaryTexture(Texture2D texture, bool isTemporary) : IDisposable
     {
         public readonly Texture2D Texture = texture;
 
@@ -16,5 +15,4 @@ namespace GooeyArtifacts.Utils
             }
         }
     }
-#endif
 }

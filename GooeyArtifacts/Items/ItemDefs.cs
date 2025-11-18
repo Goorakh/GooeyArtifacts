@@ -43,7 +43,7 @@ namespace GooeyArtifacts.Items
         [ConCommand(commandName = "dump_item_icons")]
         static void CCDumpItemIcons(ConCommandArgs args)
         {
-            string path = System.IO.Path.Combine(Main.PluginDirectory, "items_dump");
+            string path = System.IO.Path.Combine(GooeyArtifactsPlugin.PluginDirectory, "items_dump");
             System.IO.Directory.CreateDirectory(path);
 
             void dumpItemIcons(ItemDef item)

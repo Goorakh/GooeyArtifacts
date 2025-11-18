@@ -2,7 +2,7 @@
 
 namespace GooeyArtifacts.Utils
 {
-    public class IconLoader
+    public static class IconLoader
     {
         public static Sprite LoadSpriteFromBytes(byte[] imageBytes)
         {

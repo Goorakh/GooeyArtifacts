@@ -3,15 +3,14 @@ using GooeyArtifacts.EntityStates;
 using GooeyArtifacts.Items;
 using RoR2.ContentManagement;
 using System.Collections;
-using System.Linq;
 
 namespace GooeyArtifacts
 {
-    public class ContentPackProvider : IContentPackProvider
+    public sealed class ContentPackProvider : IContentPackProvider
     {
         readonly ContentPack _contentPack = new ContentPack();
 
-        public string identifier => Main.PluginGUID;
+        public string identifier => GooeyArtifactsPlugin.PluginGUID;
 
         internal ContentPackProvider()
         {

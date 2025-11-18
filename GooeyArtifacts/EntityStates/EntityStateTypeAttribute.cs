@@ -5,7 +5,7 @@ using System.Linq;
 namespace GooeyArtifacts.EntityStates
 {
     [AttributeUsage(AttributeTargets.Class, AllowMultiple = false, Inherited = false)]
-    internal class EntityStateTypeAttribute : HG.Reflection.SearchableAttribute
+    internal sealed class EntityStateTypeAttribute : HG.Reflection.SearchableAttribute
     {
         public new Type target => base.target as Type;
 

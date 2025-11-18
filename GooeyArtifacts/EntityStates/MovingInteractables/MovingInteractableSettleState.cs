@@ -5,7 +5,7 @@ using UnityEngine.Networking;
 namespace GooeyArtifacts.EntityStates.MovingInteractables
 {
     [EntityStateType]
-    public class MovingInteractableSettleState : MovingInteractableBaseState
+    public sealed class MovingInteractableSettleState : MovingInteractableBaseState
     {
         const float DURATION = 0.75f;
 

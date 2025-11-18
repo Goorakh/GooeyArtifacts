@@ -6,15 +6,15 @@ using UnityEngine.Networking;
 
 namespace GooeyArtifacts.Patches
 {
-    static class ShopTerminalPositionSyncPatch
+    static class DroneVendorTerminalPositionSyncPatch
     {
         [SystemInitializer]
         static void Init()
         {
-            On.RoR2.ShopTerminalBehavior.Start += ShopTerminalBehavior_Start;
+            On.RoR2.DroneVendorTerminalBehavior.Start += ShopTerminalBehavior_Start;
         }
 
-        static void ShopTerminalBehavior_Start(On.RoR2.ShopTerminalBehavior.orig_Start orig, ShopTerminalBehavior self)
+        static void ShopTerminalBehavior_Start(On.RoR2.DroneVendorTerminalBehavior.orig_Start orig, DroneVendorTerminalBehavior self)
         {
             orig(self);
 
@@ -24,7 +24,7 @@ namespace GooeyArtifacts.Patches
             }
         }
 
-        static IEnumerator waitForServerInitThenSyncTerminalTransform(ShopTerminalBehavior terminalBehavior)
+        static IEnumerator waitForServerInitThenSyncTerminalTransform(DroneVendorTerminalBehavior terminalBehavior)
         {
             while (terminalBehavior && !terminalBehavior.serverMultiShopController)
             {
@@ -33,8 +33,8 @@ namespace GooeyArtifacts.Patches
 
             if (!terminalBehavior || !terminalBehavior.serverMultiShopController)
                 yield break;
-            
-            MultiShopController multiShopController = terminalBehavior.serverMultiShopController;
+
+            DroneVendorMultiShopController multiShopController = terminalBehavior.serverMultiShopController;
             Transform multiShopTransform = multiShopController.transform;
 
             terminalBehavior.transform.GetPositionAndRotation(out Vector3 terminalPosition, out Quaternion terminalRotation);

@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace GooeyArtifacts.Artifacts.MovingInteractables
 {
-    public class MovableInteractable : MonoBehaviour
+    public sealed class MovableInteractable : MonoBehaviour
     {
         public static event Action<MovableInteractable> OnMovableInteractableCreated;
 

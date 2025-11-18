@@ -113,7 +113,7 @@ namespace GooeyArtifacts.Artifacts
         {
             static void dumpArtifactIcons(ArtifactDef artifact)
             {
-                string path = System.IO.Path.Combine(Main.PluginDirectory, "icons_dump", artifact.cachedName);
+                string path = System.IO.Path.Combine(GooeyArtifactsPlugin.PluginDirectory, "icons_dump", artifact.cachedName);
                 System.IO.Directory.CreateDirectory(path);
 
                 void writeSpriteToFile(Sprite sprite, string fileName)

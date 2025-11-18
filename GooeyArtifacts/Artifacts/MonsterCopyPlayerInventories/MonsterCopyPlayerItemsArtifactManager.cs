@@ -11,18 +11,16 @@ namespace GooeyArtifacts.Artifacts.MonsterCopyPlayerInventories
         [SystemInitializer]
         static void Init()
         {
-            RunArtifactManager.onArtifactEnabledGlobal += RunArtifactManager_onArtifactEnabledGlobal;
-            RunArtifactManager.onArtifactDisabledGlobal += RunArtifactManager_onArtifactDisabledGlobal;
-
-            Run.onRunDestroyGlobal += Run_onRunDestroyGlobal;
+            RunArtifactManager.onArtifactEnabledGlobal += onArtifactEnabledGlobal;
+            RunArtifactManager.onArtifactDisabledGlobal += onArtifactDisabledGlobal;
         }
 
-        static void RunArtifactManager_onArtifactEnabledGlobal(RunArtifactManager runArtifactManager, ArtifactDef artifactDef)
+        static void onArtifactEnabledGlobal(RunArtifactManager runArtifactManager, ArtifactDef artifactDef)
         {
-            if (!NetworkServer.active)
+            if (artifactDef != ArtifactDefs.MonsterCopyPlayerItems)
                 return;
 
-            if (artifactDef == ArtifactDefs.MonsterCopyPlayerItems)
+            if (NetworkServer.active)
             {
                 if (_monsterCopyPlayerItemsControllerInstance)
                 {
@@ -30,38 +28,18 @@ namespace GooeyArtifacts.Artifacts.MonsterCopyPlayerInventories
                 }
                 else
                 {
-                    _monsterCopyPlayerItemsControllerInstance = Object.Instantiate(Prefabs.MonsterCopyPlayerInventoriesControllerPrefab);
+                    _monsterCopyPlayerItemsControllerInstance = GameObject.Instantiate(Prefabs.MonsterCopyPlayerInventoriesControllerPrefab);
                     NetworkServer.Spawn(_monsterCopyPlayerItemsControllerInstance);
                 }
             }
         }
 
-        static void RunArtifactManager_onArtifactDisabledGlobal(RunArtifactManager runArtifactManager, ArtifactDef artifactDef)
+        static void onArtifactDisabledGlobal(RunArtifactManager runArtifactManager, ArtifactDef artifactDef)
         {
-            if (!NetworkServer.active)
+            if (artifactDef != ArtifactDefs.MonsterCopyPlayerItems)
                 return;
 
-            if (artifactDef == ArtifactDefs.MonsterCopyPlayerItems)
-            {
-                if (_monsterCopyPlayerItemsControllerInstance)
-                {
-                    NetworkServer.Destroy(_monsterCopyPlayerItemsControllerInstance);
-                }
-
-                _monsterCopyPlayerItemsControllerInstance = null;
-            }
-        }
-
-        static void Run_onRunDestroyGlobal(Run _)
-        {
-            if (!NetworkServer.active)
-                return;
-
-            if (_monsterCopyPlayerItemsControllerInstance)
-            {
-                NetworkServer.Destroy(_monsterCopyPlayerItemsControllerInstance);
-            }
-
+            GameObject.Destroy(_monsterCopyPlayerItemsControllerInstance);
             _monsterCopyPlayerItemsControllerInstance = null;
         }
     }

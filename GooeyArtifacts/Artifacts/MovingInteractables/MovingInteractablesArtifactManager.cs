@@ -1,8 +1,11 @@
 ﻿using GooeyArtifacts.Utils;
+using GooeyArtifacts.Utils.Extensions;
 using HG;
 using RoR2;
+using RoR2BepInExPack.GameAssetPathsBetter;
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 using UnityEngine.Networking;
@@ -12,14 +15,14 @@ namespace GooeyArtifacts.Artifacts.MovingInteractables
     public static class MovingInteractablesArtifactManager
     {
         static readonly SpawnCard[] _nonInteractableSpawnCardWhitelist = [
-            Addressables.LoadAssetAsync<SpawnCard>(RoR2BepInExPack.GameAssetPathsBetter.RoR2_DLC2.scHalcyonShardA_asset).WaitForCompletion(),
-            Addressables.LoadAssetAsync<SpawnCard>(RoR2BepInExPack.GameAssetPathsBetter.RoR2_DLC2.scHalcyonShardB_asset).WaitForCompletion(),
-            Addressables.LoadAssetAsync<SpawnCard>(RoR2BepInExPack.GameAssetPathsBetter.RoR2_DLC2.scHalcyonShardC_asset).WaitForCompletion(),
+            Addressables.LoadAssetAsync<SpawnCard>(RoR2_DLC2.scHalcyonShardA_asset).WaitForCompletion(),
+            Addressables.LoadAssetAsync<SpawnCard>(RoR2_DLC2.scHalcyonShardB_asset).WaitForCompletion(),
+            Addressables.LoadAssetAsync<SpawnCard>(RoR2_DLC2.scHalcyonShardC_asset).WaitForCompletion(),
         ];
 
         static readonly SpawnCard[] _spawnCardBlacklist = [
-            Addressables.LoadAssetAsync<InteractableSpawnCard>("RoR2/DLC1/GameModes/InfiniteTowerRun/InfiniteTowerAssets/iscInfiniteTowerSafeWard.asset").WaitForCompletion(),
-            Addressables.LoadAssetAsync<InteractableSpawnCard>("RoR2/DLC1/GameModes/InfiniteTowerRun/InfiniteTowerAssets/iscInfiniteTowerSafeWardAwaitingInteraction.asset").WaitForCompletion()
+            Addressables.LoadAssetAsync<InteractableSpawnCard>(RoR2_DLC1_GameModes_InfiniteTowerRun_InfiniteTowerAssets.iscInfiniteTowerSafeWard_asset).WaitForCompletion(),
+            Addressables.LoadAssetAsync<InteractableSpawnCard>(RoR2_DLC1_GameModes_InfiniteTowerRun_InfiniteTowerAssets.iscInfiniteTowerSafeWardAwaitingInteraction_asset).WaitForCompletion()
         ];
 
         [SystemInitializer]
@@ -34,14 +37,14 @@ namespace GooeyArtifacts.Artifacts.MovingInteractables
 
             void addMovableComponentToPrefab(string assetGuid)
             {
-                AssetLoadUtils.LoadAssetTemporary<GameObject>(assetGuid, prefab =>
+                AssetLoadUtils.LoadTempAssetAsync<GameObject>(assetGuid).OnSuccess(prefab =>
                 {
                     prefab.EnsureComponent<MovableInteractable>();
                 });
             }
 
-            addMovableComponentToPrefab(RoR2BepInExPack.GameAssetPathsBetter.RoR2_DLC1_VoidSurvivor.VoidSurvivorPod_prefab);
-            addMovableComponentToPrefab(RoR2BepInExPack.GameAssetPathsBetter.RoR2_Base_SurvivorPod.SurvivorPod_prefab);
+            addMovableComponentToPrefab(RoR2_DLC1_VoidSurvivor.VoidSurvivorPod_prefab);
+            addMovableComponentToPrefab(RoR2_Base_SurvivorPod.SurvivorPod_prefab);
         }
 
         static void SpawnCard_onSpawnedServerGlobal(SpawnCard.SpawnResult spawnResult)
@@ -75,19 +78,36 @@ namespace GooeyArtifacts.Artifacts.MovingInteractables
             {
                 yield return new WaitForEndOfFrame();
 
-                // pillars?
-                // eggs
-
                 MonoBehaviour[] movableSceneObjectComponents = [
                     .. InstanceTracker.GetInstancesList<PurchaseInteraction>(),
                     .. InstanceTracker.GetInstancesList<TimedChestController>(),
                     .. InstanceTracker.GetInstancesList<GeodeController>(),
                     .. InstanceTracker.GetInstancesList<SceneExitController>(),
+                    .. InstanceTracker.GetInstancesList<PowerPedestal>(),
                 ];
 
+                List<GameObject> movableSceneObjects = [];
                 foreach (MonoBehaviour component in movableSceneObjectComponents)
                 {
-                    GameObject sceneObject = component ? component.gameObject : null;
+                    if (component)
+                    {
+                        movableSceneObjects.Add(component.gameObject);
+                    }
+                }
+
+                if (AccessCodesMissionController.instance)
+                {
+                    foreach (AccessCodesNodeData nodeData in AccessCodesMissionController.instance.nodes)
+                    {
+                        if (nodeData.node)
+                        {
+                            movableSceneObjects.Add(nodeData.node);
+                        }
+                    }
+                }
+
+                foreach (GameObject sceneObject in movableSceneObjects)
+                {
                     if (!sceneObject)
                         continue;
 
@@ -106,7 +126,7 @@ namespace GooeyArtifacts.Artifacts.MovingInteractables
                 }
             }
 
-            Main.Instance.StartCoroutine(waitForSceneLoadThenInitSceneMovables());
+            GooeyArtifactsPlugin.Instance.StartCoroutine(waitForSceneLoadThenInitSceneMovables());
         }
 
         static void onArtifactEnabledGlobal(RunArtifactManager runArtifactManager, ArtifactDef artifactDef)
@@ -127,17 +147,17 @@ namespace GooeyArtifacts.Artifacts.MovingInteractables
 
         static void onArtifactDisabledGlobal(RunArtifactManager runArtifactManager, ArtifactDef artifactDef)
         {
-            if (!NetworkServer.active)
-                return;
-
             if (artifactDef != ArtifactDefs.MovingInteractables)
                 return;
 
             MovableInteractable.OnMovableInteractableCreated -= setupMovingInteractable;
 
-            foreach (MovableInteractable movable in InstanceTracker.GetInstancesList<MovableInteractable>())
+            if (NetworkServer.active)
             {
-                cleanupMovingInteractable(movable);
+                foreach (MovableInteractable movable in InstanceTracker.GetInstancesList<MovableInteractable>())
+                {
+                    cleanupMovingInteractable(movable);
+                }
             }
         }
 

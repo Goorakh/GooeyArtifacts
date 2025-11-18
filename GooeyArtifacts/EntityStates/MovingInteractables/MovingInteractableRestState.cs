@@ -5,7 +5,7 @@ using UnityEngine;
 namespace GooeyArtifacts.EntityStates.MovingInteractables
 {
     [EntityStateType]
-    public class MovingInteractableRestState : MovingInteractableBaseState
+    public sealed class MovingInteractableRestState : MovingInteractableBaseState
     {
         static readonly SpawnCard _fallbackPositionHelperCard;
 
@@ -81,27 +81,35 @@ namespace GooeyArtifacts.EntityStates.MovingInteractables
 
             if (isAuthority && fixedAge >= _waitDuration)
             {
-                Vector3? targetPosition = tryFindNextTargetPosition();
-                if (targetPosition.HasValue)
+                VehicleSeat currentVehicleSeat = VehicleSeat.FindVehicleSeatWithPassenger(gameObject);
+                if (!currentVehicleSeat)
                 {
-                    outer.SetNextState(new MovingInteractableMoveToTargetState
+                    Vector3? targetPosition = tryFindNextTargetPosition();
+                    if (targetPosition.HasValue)
                     {
-                        Destination = targetPosition.Value
-                    });
-                }
-                else if (_searchDistance < MaxNodeSearchDistance)
-                {
-                    outer.SetNextState(new MovingInteractableRestState
-                    {
-                        _searchDistance = Mathf.Min(MaxNodeSearchDistance, _searchDistance + 25f)
-                    });
-                }
-                else
-                {
-                    Log.Debug($"{gameObject}: no valid target position found, resetting state");
+                        outer.SetNextState(new MovingInteractableMoveToTargetState
+                        {
+                            Destination = targetPosition.Value
+                        });
 
-                    outer.SetNextStateToMain();
+                        return;
+                    }
+                    else if (_searchDistance < MaxNodeSearchDistance)
+                    {
+                        outer.SetNextState(new MovingInteractableRestState
+                        {
+                            _searchDistance = Mathf.Min(MaxNodeSearchDistance, _searchDistance + 25f)
+                        });
+
+                        return;
+                    }
+                    else
+                    {
+                        Log.Debug($"{gameObject}: no valid target position found, resetting state");
+                    }
                 }
+
+                outer.SetNextStateToMain();
             }
         }
 

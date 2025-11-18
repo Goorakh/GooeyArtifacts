@@ -4,7 +4,7 @@ using UnityEngine.Networking;
 
 namespace GooeyArtifacts.Utils
 {
-    public class SyncExternalNetworkedObjectTransform : NetworkBehaviour
+    public sealed class SyncExternalNetworkedObjectTransform : NetworkBehaviour
     {
         [SyncVar]
         GameObject _targetObject;

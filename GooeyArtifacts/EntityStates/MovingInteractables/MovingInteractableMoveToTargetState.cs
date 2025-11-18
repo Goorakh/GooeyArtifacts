@@ -11,7 +11,7 @@ using UnityEngine.Networking;
 namespace GooeyArtifacts.EntityStates.MovingInteractables
 {
     [EntityStateType]
-    public class MovingInteractableMoveToTargetState : MovingInteractableBaseState
+    public sealed class MovingInteractableMoveToTargetState : MovingInteractableBaseState
     {
         static readonly BoolConVar _cvDrawPathData = new BoolConVar("goo_draw_interactable_paths", ConVarFlags.SenderMustBeServer, "0", "");
 

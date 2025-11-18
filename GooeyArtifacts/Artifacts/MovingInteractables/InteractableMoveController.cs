@@ -6,7 +6,7 @@ using UnityEngine.Networking;
 
 namespace GooeyArtifacts.Artifacts.MovingInteractables
 {
-    public class InteractableMoveController : NetworkBehaviour
+    public sealed class InteractableMoveController : NetworkBehaviour
     {
         [NonSerialized]
         public SpawnCard SpawnCardServer;

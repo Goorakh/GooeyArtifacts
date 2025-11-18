@@ -1,6 +1,4 @@
 ﻿using RoR2.ContentManagement;
-using System;
-using System.Diagnostics;
 using UnityEngine.AddressableAssets;
 using UnityEngine.ResourceManagement.AsyncOperations;
 
@@ -8,25 +6,20 @@ namespace GooeyArtifacts.Utils
 {
     public static class AssetLoadUtils
     {
-        public static void LoadAssetTemporary<T>(string assetGuid, Action<T> onLoaded) where T : UnityEngine.Object
+        public static AsyncOperationHandle<T> LoadTempAssetAsync<T>(string assetGuid) where T : UnityEngine.Object
         {
-            StackTrace stackTrace = new StackTrace();
+            return LoadTempAssetAsync(new AssetReferenceT<T>(assetGuid));
+        }
 
-            AssetReferenceT<T> assetReference = new AssetReferenceT<T>(assetGuid);
-            AsyncOperationHandle<T> assetLoadHandle = AssetAsyncReferenceManager<T>.LoadAsset(assetReference, AsyncReferenceHandleUnloadType.Preload);
+        public static AsyncOperationHandle<T> LoadTempAssetAsync<T>(AssetReferenceT<T> assetReference) where T : UnityEngine.Object
+        {
+            AsyncOperationHandle<T> assetLoadHandle = AssetAsyncReferenceManager<T>.LoadAsset(assetReference);
             assetLoadHandle.Completed += handle =>
             {
-                if (handle.Status == AsyncOperationStatus.Succeeded)
-                {
-                    onLoaded?.Invoke(handle.Result);
-                }
-                else
-                {
-                    Log.Error_NoCallerPrefix($"Failed to load asset {assetGuid} ({typeof(T).FullName}) {stackTrace}");
-                }
-
                 AssetAsyncReferenceManager<T>.UnloadAsset(assetReference);
             };
+
+            return assetLoadHandle;
         }
     }
 }

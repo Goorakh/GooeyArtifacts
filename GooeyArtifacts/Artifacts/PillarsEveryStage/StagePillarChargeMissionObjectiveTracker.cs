@@ -3,7 +3,7 @@ using RoR2.UI;
 
 namespace GooeyArtifacts.Artifacts.PillarsEveryStage
 {
-    public class StagePillarChargeMissionObjectiveTracker : ObjectivePanelController.ObjectiveTracker
+    public sealed class StagePillarChargeMissionObjectiveTracker : ObjectivePanelController.ObjectiveTracker
     {
         int _chargedPillars;
         int _requiredPillars;

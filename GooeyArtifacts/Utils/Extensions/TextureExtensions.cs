@@ -4,7 +4,6 @@ namespace GooeyArtifacts.Utils.Extensions
 {
     public static class TextureExtensions
     {
-#if DEBUG
         public static TemporaryTexture AsReadable(this Texture2D texture)
         {
             if (texture.isReadable)
@@ -29,6 +28,5 @@ namespace GooeyArtifacts.Utils.Extensions
 
             return new TemporaryTexture(readableTexture, true);
         }
-#endif
     }
 }

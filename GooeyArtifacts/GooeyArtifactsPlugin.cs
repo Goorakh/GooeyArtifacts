@@ -7,16 +7,16 @@ namespace GooeyArtifacts
     [BepInPlugin(PluginGUID, PluginName, PluginVersion)]
     [BepInDependency(R2API.PrefabAPI.PluginGUID)]
     [BepInDependency(R2API.RecalculateStatsAPI.PluginGUID)]
-    public class Main : BaseUnityPlugin
+    public sealed class GooeyArtifactsPlugin : BaseUnityPlugin
     {
         public const string PluginGUID = PluginAuthor + "." + PluginName;
         public const string PluginAuthor = "Gorakh";
         public const string PluginName = "GooeyArtifacts";
-        public const string PluginVersion = "1.1.0";
+        public const string PluginVersion = "1.1.1";
 
         ContentPackProvider _contentPackProvider;
 
-        internal static Main Instance { get; private set; }
+        internal static GooeyArtifactsPlugin Instance { get; private set; }
 
         public static string PluginDirectory { get; private set; }
 

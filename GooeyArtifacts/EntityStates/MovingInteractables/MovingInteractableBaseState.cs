@@ -7,7 +7,7 @@ using UnityEngine;
 
 namespace GooeyArtifacts.EntityStates.MovingInteractables
 {
-    public class MovingInteractableBaseState : EntityState
+    public abstract class MovingInteractableBaseState : EntityState
     {
         protected SpawnCard spawnCard { get; private set; }
 
@@ -50,6 +50,8 @@ namespace GooeyArtifacts.EntityStates.MovingInteractables
                     hullSize = HullClassification.Human;
                     occupyPosition = true;
                 }
+
+                VehicleSeat.onPassengerEnterGlobal += onPassengerEnterAuthority;
             }
         }
 
@@ -58,6 +60,20 @@ namespace GooeyArtifacts.EntityStates.MovingInteractables
             base.FixedUpdate();
 
             if ((!transform || !gameObject) && isAuthority)
+            {
+                outer.SetNextStateToMain();
+            }
+        }
+
+        public override void OnExit()
+        {
+            base.OnExit();
+            VehicleSeat.onPassengerEnterGlobal -= onPassengerEnterAuthority;
+        }
+
+        void onPassengerEnterAuthority(VehicleSeat vehicleSeat, GameObject passengerObject)
+        {
+            if (passengerObject == gameObject && !outer.IsInMainState())
             {
                 outer.SetNextStateToMain();
             }

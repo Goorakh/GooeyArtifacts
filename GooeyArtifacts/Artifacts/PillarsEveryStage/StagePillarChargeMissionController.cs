@@ -1,8 +1,10 @@
 ﻿using EntityStates.Missions.Moon;
 using GooeyArtifacts.Patches;
 using GooeyArtifacts.Utils;
+using GooeyArtifacts.Utils.Extensions;
 using RoR2;
 using RoR2.UI;
+using RoR2BepInExPack.GameAssetPathsBetter;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,14 +13,14 @@ using UnityEngine.Networking;
 
 namespace GooeyArtifacts.Artifacts.PillarsEveryStage
 {
-    public class StagePillarChargeMissionController : NetworkBehaviour
+    public sealed class StagePillarChargeMissionController : NetworkBehaviour
     {
         static EffectIndex _teleporterUnlockEffectIndex = EffectIndex.Invalid;
 
         [SystemInitializer(typeof(EffectCatalog))]
         static void Init()
         {
-            AssetLoadUtils.LoadAssetTemporary<GameObject>(RoR2BepInExPack.GameAssetPathsBetter.RoR2_Base_WeeklyRun.TimeCrystalDeath_prefab, timeCrystalDeathPrefab =>
+            AssetLoadUtils.LoadTempAssetAsync<GameObject>(RoR2_Base_WeeklyRun.TimeCrystalDeath_prefab).OnSuccess(timeCrystalDeathPrefab =>
             {
                 _teleporterUnlockEffectIndex = EffectCatalog.FindEffectIndexFromPrefab(timeCrystalDeathPrefab);
                 if (_teleporterUnlockEffectIndex == EffectIndex.Invalid)

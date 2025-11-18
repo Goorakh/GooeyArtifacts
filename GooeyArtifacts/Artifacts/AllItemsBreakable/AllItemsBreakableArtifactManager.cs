@@ -1,7 +1,9 @@
 ﻿using GooeyArtifacts.Items;
 using GooeyArtifacts.Utils;
+using GooeyArtifacts.Utils.Extensions;
 using RoR2;
 using RoR2.UI;
+using RoR2BepInExPack.GameAssetPathsBetter;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.Networking;
@@ -19,7 +21,7 @@ namespace GooeyArtifacts.Artifacts.AllItemsBreakable
 
             On.RoR2.UI.HealthBar.CheckInventory += HealthBar_CheckInventory;
 
-            AssetLoadUtils.LoadAssetTemporary<GameObject>(RoR2BepInExPack.GameAssetPathsBetter.RoR2_DLC1_FragileDamageBonus.DelicateWatchProcEffect_prefab, watchBreakEffectPrefab =>
+            AssetLoadUtils.LoadTempAssetAsync<GameObject>(RoR2_DLC1_FragileDamageBonus.DelicateWatchProcEffect_prefab).OnSuccess(watchBreakEffectPrefab =>
             {
                 _itemBreakEffectIndex = EffectCatalog.FindEffectIndexFromPrefab(watchBreakEffectPrefab);
                 if (_itemBreakEffectIndex == EffectIndex.Invalid)
@@ -53,7 +55,6 @@ namespace GooeyArtifacts.Artifacts.AllItemsBreakable
                 return;
 
             int brokenItemStacks = 0;
-            int totalBrokenItemCount = 0;
 
             for (int i = inventory.itemAcquisitionOrder.Count - 1; brokenItemStacks < 7 && i >= 0; i--)
             {
@@ -61,19 +62,24 @@ namespace GooeyArtifacts.Artifacts.AllItemsBreakable
                 if (!isBreakableFilter(itemIndex))
                     continue;
 
-                int itemCount = inventory.GetItemCount(itemIndex);
-                inventory.RemoveItem(itemIndex, itemCount);
-                totalBrokenItemCount += itemCount;
+                Inventory.ItemTransformation breakItemTransformation = new Inventory.ItemTransformation
+                {
+                    allowWhenDisabled = true,
+                    minToTransform = 1,
+                    maxToTransform = int.MaxValue,
+                    originalItemIndex = itemIndex,
+                    newItemIndex = ItemDefs.GenericBrokenItem.itemIndex,
+                    transformationType = (ItemTransformationTypeIndex)CharacterMasterNotificationQueue.TransformationType.Default
+                };
 
-                CharacterMasterNotificationQueue.SendTransformNotification(self.body.master, itemIndex, ItemDefs.GenericBrokenItem.itemIndex, CharacterMasterNotificationQueue.TransformationType.Default);
-
-                brokenItemStacks++;
+                if (breakItemTransformation.TryTransform(inventory, out _))
+                {
+                    brokenItemStacks++;
+                }
             }
 
             if (brokenItemStacks > 0)
             {
-                inventory.GiveItem(ItemDefs.GenericBrokenItem, totalBrokenItemCount);
-
                 if (_itemBreakEffectIndex != EffectIndex.Invalid)
                 {
                     EffectData watchBreakEffectData = new EffectData

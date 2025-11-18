@@ -1,8 +1,10 @@
 ﻿using GooeyArtifacts.Utils;
-using HarmonyLib;
 using HG;
 using MonoMod.RuntimeDetour;
 using RoR2;
+using RoR2.ContentManagement;
+using System;
+using System.Collections.Generic;
 using System.Reflection;
 using UnityEngine;
 using UnityEngine.Networking;
@@ -14,31 +16,40 @@ namespace GooeyArtifacts.Patches
         [SystemInitializer]
         static void Init()
         {
-            MethodInfo lockObjectSetter = AccessTools.DeclaredPropertySetter(typeof(PurchaseInteraction), nameof(PurchaseInteraction.NetworklockGameObject));
-            if (lockObjectSetter is not null)
+            HashSet<MethodInfo> patchedSetLockObjectMethods = [];
+
+            foreach (GameObject networkedPrefab in ContentManager.networkedObjectPrefabs)
             {
-                new Hook(lockObjectSetter, PurchaseInteraction_set_NetworklockGameObject);
-            }
-            else
-            {
-                Log.Error("Unable to find lock object setter method");
+                foreach (IInteractableLockable lockableInteractable in networkedPrefab.GetComponents<IInteractableLockable>())
+                {
+                    InterfaceMapping interfaceMapping = lockableInteractable.GetType().GetInterfaceMap(typeof(IInteractableLockable));
+                    int methodIndex = Array.FindIndex(interfaceMapping.InterfaceMethods, m => m.Name == nameof(IInteractableLockable.SetLockObject));
+                    MethodInfo setLockObjectMethod = ArrayUtils.GetSafe(interfaceMapping.TargetMethods, methodIndex);
+                    if (setLockObjectMethod != null && patchedSetLockObjectMethods.Add(setLockObjectMethod))
+                    {
+                        new Hook(setLockObjectMethod, IInteractableLockable_SetLockObject);
+                    }
+                }
             }
         }
 
-        delegate void orig_set_NetworklockGameObject(PurchaseInteraction self, GameObject value);
-
-        static void PurchaseInteraction_set_NetworklockGameObject(orig_set_NetworklockGameObject orig, PurchaseInteraction self, GameObject value)
+        delegate void orig_SetLockObject(IInteractableLockable self, GameObject value);
+        static void IInteractableLockable_SetLockObject(orig_SetLockObject orig, IInteractableLockable self, GameObject lockObject)
         {
-            orig(self, value);
+            orig(self, lockObject);
 
             if (NetworkServer.active)
             {
-                ServerLockObjectTracker lockObjectTracker = self.gameObject.EnsureComponent<ServerLockObjectTracker>();
-                lockObjectTracker.SetLockObject(self.lockGameObject);
+                GameObject lockableObject = self?.GetGameObject();
+                if (lockableObject)
+                {
+                    ServerLockObjectTracker lockObjectTracker = lockableObject.EnsureComponent<ServerLockObjectTracker>();
+                    lockObjectTracker.SetLockObject(lockObject);
+                }
             }
         }
 
-        class ServerLockObjectTracker : MonoBehaviour
+        sealed class ServerLockObjectTracker : MonoBehaviour
         {
             SyncExternalTransformPseudoParent _pseudoParentController;
 

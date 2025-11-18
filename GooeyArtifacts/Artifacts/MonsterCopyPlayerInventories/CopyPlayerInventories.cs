@@ -7,7 +7,7 @@ using UnityEngine.Networking;
 namespace GooeyArtifacts.Artifacts.MonsterCopyPlayerInventories
 {
     [RequireComponent(typeof(Inventory))]
-    public class CopyPlayerInventories : MonoBehaviour
+    public sealed class CopyPlayerInventories : MonoBehaviour
     {
         Inventory _inventory;
 
@@ -26,16 +26,16 @@ namespace GooeyArtifacts.Artifacts.MonsterCopyPlayerInventories
 
         void OnEnable()
         {
-            Inventory.onInventoryChangedGlobal += Inventory_onInventoryChangedGlobal;
-            CharacterMaster.onStartGlobal += CharacterMaster_onStartGlobal;
+            Inventory.onInventoryChangedGlobal += onInventoryChangedGlobal;
+            CharacterMaster.onStartGlobal += onMasterStartGlobal;
 
             refreshInventory();
         }
 
         void OnDisable()
         {
-            Inventory.onInventoryChangedGlobal -= Inventory_onInventoryChangedGlobal;
-            CharacterMaster.onStartGlobal -= CharacterMaster_onStartGlobal;
+            Inventory.onInventoryChangedGlobal -= onInventoryChangedGlobal;
+            CharacterMaster.onStartGlobal -= onMasterStartGlobal;
         }
 
         void FixedUpdate()
@@ -77,7 +77,7 @@ namespace GooeyArtifacts.Artifacts.MonsterCopyPlayerInventories
                             itemOrder.Add(itemIndex);
                         }
 
-                        newItemStacks[(int)itemIndex] += inventory.GetItemCount(itemIndex);
+                        newItemStacks[(int)itemIndex] += inventory.GetItemCountEffective(itemIndex);
                     }
                 }
             }
@@ -106,24 +106,24 @@ namespace GooeyArtifacts.Artifacts.MonsterCopyPlayerInventories
                     Log.Debug($"Removing {Language.GetString(ItemCatalog.GetItemDef(item).nameToken)} (x{-itemCountDiff}) from inventories");
                 }
 
-                _inventory.GiveItem(item, itemCountDiff);
+                _inventory.GiveItemChanneled(item, itemCountDiff);
 
                 foreach (Inventory inventory in allNonPlayersInventories)
                 {
-                    inventory.GiveItem(item, itemCountDiff);
+                    inventory.GiveItemChanneled(item, itemCountDiff);
                 }
             }
         }
 
-        void Inventory_onInventoryChangedGlobal(Inventory inventory)
+        void onInventoryChangedGlobal(Inventory inventory)
         {
-            if (inventory && inventory.TryGetComponent(out CharacterMaster master) && master.teamIndex == TeamIndex.Player)
+            if (inventory && inventory.TryGetComponent(out CharacterMaster master) && master.playerCharacterMasterController)
             {
                 _inventoryDirty = true;
             }
         }
 
-        void CharacterMaster_onStartGlobal(CharacterMaster master)
+        void onMasterStartGlobal(CharacterMaster master)
         {
             if (!NetworkServer.active)
                 return;

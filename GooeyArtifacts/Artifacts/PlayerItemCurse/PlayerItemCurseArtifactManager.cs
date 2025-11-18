@@ -63,15 +63,19 @@ namespace GooeyArtifacts.Artifacts.PlayerItemCurse
                 if (!itemDef || itemDef.hidden || itemDef.tier == ItemTier.NoTier)
                     continue;
 
-                totalInventoryValue += inventory.GetItemCount(itemIndex) * ArrayUtils.GetSafe(_tierCurseWeights, (int)itemDef.tier, 1f);
+                totalInventoryValue += inventory.GetItemCountEffective(itemIndex) * ArrayUtils.GetSafe(_tierCurseWeights, (int)itemDef.tier, 1f);
             }
 
             int equipmentSlotCount = inventory.GetEquipmentSlotCount();
-            for (uint i = 0; i < equipmentSlotCount; i++)
+            for (uint slot = 0; slot < equipmentSlotCount; slot++)
             {
-                if (inventory.GetEquipment(i).equipmentIndex != EquipmentIndex.None)
+                int equipmentSetCount = inventory.GetEquipmentSetCount(slot);
+                for (uint set = 0; set < equipmentSetCount; set++)
                 {
-                    totalInventoryValue += EQUIPMENT_WEIGHT;
+                    if (inventory.GetEquipment(slot, set).equipmentIndex != EquipmentIndex.None)
+                    {
+                        totalInventoryValue += EQUIPMENT_WEIGHT;
+                    }
                 }
             }
 

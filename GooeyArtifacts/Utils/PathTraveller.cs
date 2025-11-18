@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace GooeyArtifacts.Utils
 {
-    public class PathTraveller
+    public sealed class PathTraveller
     {
         public readonly Path Path;
 
